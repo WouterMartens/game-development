@@ -1,14 +1,19 @@
+interface Player {
+    playerName: string,
+    score: number
+}
+
 class Game {
     // Global attributes for canvas
     // Readonly attributes are read-only. They can only be initialized in the constructor
-    private readonly canvas: any; // find the right type
-    private readonly ctx: any; // find the right type
+    private readonly canvas: HTMLCanvasElement; 
+    private readonly ctx: CanvasRenderingContext2D;
 
     // Some global player attributes
     private readonly player: string;
     private readonly score: number;
     private readonly lives: number;
-    private readonly highscores: Array<any>; // TODO: do not use 'any': write an interface!
+    private readonly highscores: Array<Player>;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
