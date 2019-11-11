@@ -3,7 +3,17 @@
     src: url('../fonts/Minecraft.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'Roboto';
+    src: url('../fonts/RobotoMono-Regular.ttf') format('truetype');
+}
+
 canvas{
-    font-family: 'Minecraft';
+    font-family: 'Roboto';
+    /* background-color: black; */
     background-image: url("../images/nebula-bg.jpg");
+}
+
+html {
+    overflow: hidden;
 }
