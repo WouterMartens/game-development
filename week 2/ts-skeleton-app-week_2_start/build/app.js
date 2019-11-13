@@ -21,10 +21,17 @@ class Game {
                 score: 200
             }
         ];
-        this.levelScreen();
+        this.titleScreen();
+    }
+    drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
+        this.ctx.save();
+        this.ctx.fillStyle = colour;
+        this.ctx.font = fontSize + 'px Roboto';
+        this.ctx.textAlign = alignment;
+        this.ctx.fillText(text, x, y);
+        this.ctx.restore();
     }
     startScreen() {
-        this.ctx.fillStyle = 'white';
         this.drawAsteroidHeading();
         this.drawIntroText();
         const buttonImage = './assets/images/SpaceShooterRedux/PNG/UI/buttonBlue.png';
@@ -33,27 +40,18 @@ class Game {
         this.loadImage(asteroidImage, this.writeAsteroidImageToStartScreen);
     }
     drawAsteroidHeading() {
-        const fontSize = this.canvas.width / 20;
-        this.ctx.font = fontSize + 'px Roboto';
-        const text = this.ctx.measureText('Asteroids');
-        this.ctx.fillText('Asteroids', this.canvas.width / 2 - text.width / 2, 200);
+        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
     }
     drawIntroText() {
-        const fontSize = this.canvas.width / 30;
-        this.ctx.font = fontSize + 'px Roboto';
-        const text = this.ctx.measureText('Press start to play');
-        this.ctx.fillText('Press start to play', this.canvas.width / 2 - text.width / 2, this.canvas.height / 2);
+        this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 500, 60, 'center');
     }
     drawButton(img) {
         let x = this.canvas.width / 2 - img.width / 2;
         let y = 700;
         this.ctx.drawImage(img, x, y);
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = '20px Roboto';
-        const text = this.ctx.measureText('Play');
-        x += img.width / 2 - text.width / 2;
+        x += img.width / 2;
         y += img.height / 3 * 2;
-        this.ctx.fillText('Play', x, y);
+        this.drawTextToCanvas('Play', x, y, 20, 'center', 'black');
     }
     writeAsteroidImageToStartScreen(img) {
         this.ctx.translate(-img.width / 2, -img.height / 2);
@@ -62,7 +60,7 @@ class Game {
     }
     levelScreen() {
         this.ctx.fillStyle = 'white';
-        this.drawAsteroids();
+        this.drawAsteroids(20);
         const lifeImage = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
         this.loadImage(lifeImage, this.drawLifeImages);
         this.drawCurrentScore();
@@ -70,15 +68,15 @@ class Game {
         const shipImage = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
         this.loadImage(shipImage, this.drawPlayerShip);
     }
-    drawAsteroids() {
-        for (let i = 0; i < 20; i++) {
+    drawAsteroids(num) {
+        for (let i = 0; i < num; i++) {
             this.drawRandomAsteroid();
         }
     }
     writeAsteroidImageToLevelScreen(img) {
         this.ctx.save();
-        const x = this.randomNumber(img.width / 2, this.canvas.width);
-        const y = this.randomNumber(img.height / 2, this.canvas.height);
+        const x = this.randomNumber(img.width, this.canvas.width - img.width);
+        const y = this.randomNumber(img.height, this.canvas.height - img.width);
         this.ctx.translate(x + 0.5 * img.width, y + 0.5 * img.height);
         const degrees = this.randomNumber(0, 360);
         this.ctx.rotate((Math.PI / 180) * degrees);
@@ -99,13 +97,12 @@ class Game {
     drawCurrentScore() {
         const x = 50;
         const y = this.canvas.height - 50;
-        this.ctx.font = '40px Roboto';
-        this.ctx.fillText(`Score: ${this.score}`, x, y);
+        this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
     }
     drawRandomAsteroid() {
         let colour = '';
         let size = '';
-        let amount;
+        let amount = 2;
         if (this.randomNumber(1, 2) === 1) {
             colour = 'Brown';
         }
@@ -115,30 +112,44 @@ class Game {
         switch (this.randomNumber(1, 4)) {
             case 1:
                 size = 'tiny';
-                amount = 2;
                 break;
             case 2:
                 size = 'small';
-                amount = 2;
                 break;
             case 3:
                 size = 'med';
-                amount = 2;
                 break;
             case 4:
                 size = 'big';
                 amount = 4;
                 break;
-            default:
-                size = 'big';
-                amount = 4;
-                break;
         }
-        const asteroidImage = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${amount}.png`;
+        let number = this.randomNumber(1, amount);
+        const asteroidImage = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
         this.loadImage(asteroidImage, this.writeAsteroidImageToLevelScreen);
     }
     titleScreen() {
-        this.ctx.fillStyle = 'white';
+        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
+        this.drawHighscores();
+    }
+    drawHighscores() {
+        let longestLine = 0;
+        let lines = [];
+        const fontSize = 60;
+        this.ctx.font = fontSize + 'px Roboto';
+        for (let i = 0; i < this.highscores.length; i++) {
+            const player = this.highscores[i];
+            const string = `${i + 1}: ${player.playerName}, score: ${player.score}`;
+            const textWidth = this.ctx.measureText(string).width;
+            lines.push(string);
+            if (textWidth > longestLine) {
+                longestLine = textWidth;
+            }
+        }
+        lines.forEach((line, i) => {
+            this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
+            console.log(line, longestLine);
+        });
     }
     loadImage(source, callback) {
         let imageElement = new Image();
