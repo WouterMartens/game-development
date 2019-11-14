@@ -1,5 +1,15 @@
 class Game {
     constructor(canvasId) {
+        this.loop = () => {
+            requestAnimationFrame(this.loop);
+            const asteroidImage = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png`;
+            this.loadImage(asteroidImage, this.drawMovingImageToLevelScreen);
+            this.drawCurrentScore();
+            const lifeImage = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
+            this.loadImage(lifeImage, this.drawLifeImages);
+            const shipImage = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
+            this.loadImage(shipImage, this.drawPlayerShip);
+        };
         this.canvas = canvasId;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
@@ -21,7 +31,27 @@ class Game {
                 score: 200
             }
         ];
-        this.titleScreen();
+        this.asteroids = [
+            {
+                x: this.canvas.width / 2,
+                y: this.canvas.height / 2,
+                xVelocity: 5,
+                yVelocity: 5
+            },
+            {
+                x: 5,
+                y: 5,
+                xVelocity: 3,
+                yVelocity: 3
+            },
+            {
+                x: this.canvas.width - 150,
+                y: this.canvas.height - 150,
+                xVelocity: 1,
+                yVelocity: 1
+            },
+        ];
+        this.loop();
     }
     drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
         this.ctx.save();
@@ -59,19 +89,27 @@ class Game {
         this.ctx.translate(img.width / 2, img.height / 2);
     }
     levelScreen() {
-        this.ctx.fillStyle = 'white';
-        this.drawAsteroids(20);
-        const lifeImage = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
-        this.loadImage(lifeImage, this.drawLifeImages);
-        this.drawCurrentScore();
-        this.drawRandomAsteroid();
-        const shipImage = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
-        this.loadImage(shipImage, this.drawPlayerShip);
+        this.loop();
     }
     drawAsteroids(num) {
         for (let i = 0; i < num; i++) {
             this.drawRandomAsteroid();
         }
+    }
+    drawMovingImageToLevelScreen(img) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.asteroids.forEach((asteroid, index) => {
+            console.log(asteroid, index);
+            if (asteroid.x >= this.canvas.width - img.width || asteroid.x <= 0) {
+                asteroid.xVelocity *= -1;
+            }
+            if (asteroid.y >= this.canvas.height - img.height || asteroid.y <= 0) {
+                asteroid.yVelocity *= -1;
+            }
+            asteroid.x += asteroid.xVelocity;
+            asteroid.y += asteroid.yVelocity;
+            this.ctx.drawImage(img, asteroid.x, asteroid.y);
+        });
     }
     writeAsteroidImageToLevelScreen(img) {
         this.ctx.save();

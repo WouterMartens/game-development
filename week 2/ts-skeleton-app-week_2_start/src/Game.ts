@@ -3,6 +3,13 @@ interface Player {
     score: number
 }
 
+interface Asteroid {
+    x: number,
+    y: number,
+    xVelocity: number,
+    yVelocity: number
+}
+
 class Game {
     // Global attributes for canvas
     // Readonly attributes are read-only. They can only be initialized in the constructor
@@ -14,6 +21,9 @@ class Game {
     private readonly score: number;
     private readonly lives: number;
     private readonly highscores: Array<Player>;
+
+    //private asteroid: Asteroid;
+    private asteroids: Asteroid[];
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -42,10 +52,33 @@ class Game {
             }
         ]
 
+        this.asteroids = [
+            {
+                x: this.canvas.width / 2,
+                y: this.canvas.height / 2,
+                xVelocity: 5,
+                yVelocity: 5
+            },
+            {
+                x: 5,
+                y: 5,
+                xVelocity: 3,
+                yVelocity: 3
+            },
+            {
+                x: this.canvas.width - 150,
+                y: this.canvas.height - 150,
+                xVelocity: 1,
+                yVelocity: 1
+            },
+        ]
+
         // All screens: uncomment to activate
         // this.startScreen();
         // this.levelScreen();
-        this.titleScreen();
+        // this.titleScreen();
+
+        this.loop();
     }
 
     /**
@@ -137,19 +170,21 @@ class Game {
      * Method to initialize the level screen
      */
     public levelScreen() {
-        this.ctx.fillStyle = 'white';
+        // this.ctx.fillStyle = 'white';
 
-        this.drawAsteroids(20);
-        //1. load life images
-        const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
-        this.loadImage(lifeImage, this.drawLifeImages);
-        //2. draw current score
-        this.drawCurrentScore();
-        //3. draw random asteroids
-        this.drawRandomAsteroid();
-        //4. draw player spaceship
-        const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
-        this.loadImage(shipImage, this.drawPlayerShip);
+        // this.drawAsteroids(20);
+        // //1. load life images
+        // const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
+        // this.loadImage(lifeImage, this.drawLifeImages);
+        // //2. draw current score
+        // this.drawCurrentScore();
+        // //3. draw random asteroids
+        // this.drawRandomAsteroid();
+        // //4. draw player spaceship
+        // const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
+        // this.loadImage(shipImage, this.drawPlayerShip);
+
+        this.loop();
     }
 
     /**
@@ -160,6 +195,44 @@ class Game {
         for (let i = 0; i < num; i++) {
             this.drawRandomAsteroid();
         }
+    }
+
+    // public loop() {
+    public loop = () => {
+        requestAnimationFrame(this.loop);
+
+        const asteroidImage: string = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png`;
+        this.loadImage(asteroidImage, this.drawMovingImageToLevelScreen);
+
+        this.drawCurrentScore();
+
+        const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
+        this.loadImage(lifeImage, this.drawLifeImages);
+
+        const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
+        this.loadImage(shipImage, this.drawPlayerShip);
+    }
+
+    private drawMovingImageToLevelScreen(img: HTMLImageElement) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.asteroids.forEach((asteroid, index) => {
+            console.log(asteroid, index);
+
+            if (asteroid.x >= this.canvas.width - img.width || asteroid.x <= 0) {
+                asteroid.xVelocity *= -1;
+            }
+
+            if (asteroid.y >= this.canvas.height - img.height || asteroid.y <= 0) {
+                asteroid.yVelocity *= -1;
+            }
+
+            asteroid.x += asteroid.xVelocity;
+            asteroid.y += asteroid.yVelocity;
+
+            this.ctx.drawImage(img, asteroid.x, asteroid.y);
+        });
+        // this.drawAsteroids(100);
     }
 
     /**
