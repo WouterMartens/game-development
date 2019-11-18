@@ -1,14 +1,117 @@
+class Asteroid {
+    constructor(x, y, velocityX, velocityY, rotation, rotationVelocity) {
+        this._x = x;
+        this._y = y;
+        this._velocityX = velocityX;
+        this._velocityY = velocityY;
+        this._rotation = Math.PI / 180 * rotation;
+        this._rotationVelocity = rotationVelocity;
+        console.log(rotationVelocity);
+        this.img = new Image();
+        this.source = this.getRandomAsteroid();
+        this.loadImage(this.source);
+    }
+    get x() {
+        return this._x;
+    }
+    set x(value) {
+        this._x = value;
+    }
+    get y() {
+        return this._y;
+    }
+    set y(value) {
+        this._y = value;
+    }
+    get velocityX() {
+        return this._velocityX;
+    }
+    set velocityX(value) {
+        this._velocityX = value;
+    }
+    get velocityY() {
+        return this._velocityY;
+    }
+    set velocityY(value) {
+        this._velocityY = value;
+    }
+    get rotation() {
+        return this._rotation;
+    }
+    set rotation(value) {
+        this._rotation = value;
+    }
+    get rotationVelocity() {
+        return this._rotationVelocity;
+    }
+    set rotationVelocity(value) {
+        this._rotationVelocity = value;
+    }
+    loadImage(source) {
+        this.img.src = source;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x + 0.5 * this.img.width, this.y + 0.5 * this.img.height);
+        ctx.rotate(this.rotation);
+        ctx.translate(-(this.x + 0.5 * this.img.width), -(this.y + 0.5 * this.img.height));
+        ctx.drawImage(this.img, this.x, this.y);
+        ctx.restore();
+        this.rotation += this.rotationVelocity;
+    }
+    move(canvas) {
+        if (this.x >= canvas.width - this.img.width || this.x <= 0) {
+            this.velocityX *= -1;
+        }
+        if (this.y >= canvas.height - this.img.height || this.y <= 0) {
+            this.velocityY *= -1;
+        }
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+    }
+    getRandomAsteroid() {
+        let colour = '';
+        let size = '';
+        let amount = 2;
+        if (Game.randomNumber(1, 2) === 1) {
+            colour = 'Brown';
+        }
+        else {
+            colour = 'Grey';
+        }
+        switch (Game.randomNumber(1, 4)) {
+            case 1:
+                size = 'tiny';
+                break;
+            case 2:
+                size = 'small';
+                break;
+            case 3:
+                size = 'med';
+                break;
+            case 4:
+                size = 'big';
+                amount = 4;
+                break;
+        }
+        let number = Game.randomNumber(1, amount);
+        return `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
+    }
+}
 class Game {
     constructor(canvasId) {
         this.loop = () => {
-            requestAnimationFrame(this.loop);
-            const asteroidImage = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png`;
-            this.loadImage(asteroidImage, this.drawMovingImageToLevelScreen);
-            this.drawCurrentScore();
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.asteroids.forEach(asteroid => {
+                asteroid.draw(this.ctx);
+                asteroid.move(this.canvas);
+            });
             const lifeImage = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
             this.loadImage(lifeImage, this.drawLifeImages);
+            this.drawCurrentScore();
             const shipImage = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
             this.loadImage(shipImage, this.drawPlayerShip);
+            requestAnimationFrame(this.loop);
         };
         this.canvas = canvasId;
         this.canvas.width = window.innerWidth;
@@ -17,6 +120,7 @@ class Game {
         this.player = "Player one";
         this.score = 400;
         this.lives = 3;
+        this.asteroids = [];
         this.highscores = [
             {
                 playerName: 'Loek',
@@ -31,27 +135,7 @@ class Game {
                 score: 200
             }
         ];
-        this.asteroids = [
-            {
-                x: this.canvas.width / 2,
-                y: this.canvas.height / 2,
-                xVelocity: 5,
-                yVelocity: 5
-            },
-            {
-                x: 5,
-                y: 5,
-                xVelocity: 3,
-                yVelocity: 3
-            },
-            {
-                x: this.canvas.width - 150,
-                y: this.canvas.height - 150,
-                xVelocity: 1,
-                yVelocity: 1
-            },
-        ];
-        this.loop();
+        this.levelScreen();
     }
     drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
         this.ctx.save();
@@ -66,8 +150,9 @@ class Game {
         this.drawIntroText();
         const buttonImage = './assets/images/SpaceShooterRedux/PNG/UI/buttonBlue.png';
         this.loadImage(buttonImage, this.drawButton);
-        const asteroidImage = './assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big' + this.randomNumber(1, 4) + '.png';
-        this.loadImage(asteroidImage, this.writeAsteroidImageToStartScreen);
+        const asteroidImage = './assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big' + Game.randomNumber(1, 4) + '.png';
+        const asteroid = new Asteroid(this.canvas.width / 2, this.canvas.height / 2, 0, 0, 90, 0);
+        asteroid.loadImage(asteroidImage);
     }
     drawAsteroidHeading() {
         this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
@@ -89,38 +174,20 @@ class Game {
         this.ctx.translate(img.width / 2, img.height / 2);
     }
     levelScreen() {
+        this.createAsteroids(Game.randomNumber(2, 5));
         this.loop();
     }
-    drawAsteroids(num) {
+    createAsteroids(num) {
         for (let i = 0; i < num; i++) {
-            this.drawRandomAsteroid();
+            const x = Game.randomNumber(100, this.canvas.width - 100);
+            const y = Game.randomNumber(100, this.canvas.height - 100);
+            const vX = Game.randomNumber(1, 3);
+            const vY = Game.randomNumber(1, 3);
+            const r = Game.randomNumber(0, 359);
+            const rV = Game.randomNumber(1, 5) / 200;
+            const asteroid = new Asteroid(x, y, vX, vY, r, rV);
+            this.asteroids.push(asteroid);
         }
-    }
-    drawMovingImageToLevelScreen(img) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.asteroids.forEach((asteroid, index) => {
-            console.log(asteroid, index);
-            if (asteroid.x >= this.canvas.width - img.width || asteroid.x <= 0) {
-                asteroid.xVelocity *= -1;
-            }
-            if (asteroid.y >= this.canvas.height - img.height || asteroid.y <= 0) {
-                asteroid.yVelocity *= -1;
-            }
-            asteroid.x += asteroid.xVelocity;
-            asteroid.y += asteroid.yVelocity;
-            this.ctx.drawImage(img, asteroid.x, asteroid.y);
-        });
-    }
-    writeAsteroidImageToLevelScreen(img) {
-        this.ctx.save();
-        const x = this.randomNumber(img.width, this.canvas.width - img.width);
-        const y = this.randomNumber(img.height, this.canvas.height - img.width);
-        this.ctx.translate(x + 0.5 * img.width, y + 0.5 * img.height);
-        const degrees = this.randomNumber(0, 360);
-        this.ctx.rotate((Math.PI / 180) * degrees);
-        this.ctx.translate(-(x + 0.5 * img.width), -(y + 0.5 * img.height));
-        this.ctx.drawImage(img, x, y);
-        this.ctx.restore();
     }
     drawPlayerShip(img) {
         this.ctx.translate(-img.width / 2, -img.height / 2);
@@ -136,35 +203,6 @@ class Game {
         const x = 50;
         const y = this.canvas.height - 50;
         this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
-    }
-    drawRandomAsteroid() {
-        let colour = '';
-        let size = '';
-        let amount = 2;
-        if (this.randomNumber(1, 2) === 1) {
-            colour = 'Brown';
-        }
-        else {
-            colour = 'Grey';
-        }
-        switch (this.randomNumber(1, 4)) {
-            case 1:
-                size = 'tiny';
-                break;
-            case 2:
-                size = 'small';
-                break;
-            case 3:
-                size = 'med';
-                break;
-            case 4:
-                size = 'big';
-                amount = 4;
-                break;
-        }
-        let number = this.randomNumber(1, amount);
-        const asteroidImage = `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
-        this.loadImage(asteroidImage, this.writeAsteroidImageToLevelScreen);
     }
     titleScreen() {
         this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
@@ -196,7 +234,7 @@ class Game {
         });
         imageElement.src = source;
     }
-    randomNumber(min, max) {
+    static randomNumber(min, max) {
         return Math.round(Math.random() * (max - min) + min);
     }
 }
