@@ -15,6 +15,11 @@ class Game {
     private readonly lives: number;
     private readonly highscores: Array<Player>;
 
+    private t: DOMHighResTimeStamp;
+    private startTime: DOMHighResTimeStamp;
+    private averageFpsList: DOMHighResTimeStamp[];
+    private averageAsteroids: number[];
+
     //private asteroid: Asteroid;
     private asteroids: Asteroid[];
 
@@ -29,6 +34,11 @@ class Game {
         this.player = "Player one";
         this.score = 400;
         this.lives = 3;
+
+        this.t = performance.now();
+        this.startTime = this.t;
+        this.averageFpsList = [];
+        this.averageAsteroids = [];
 
         this.asteroids = [];
 
@@ -51,8 +61,6 @@ class Game {
         // this.startScreen();
         this.levelScreen();
         // this.titleScreen();
-
-        // this.loop();
     }
 
     /**
@@ -88,32 +96,22 @@ class Game {
      */
     public startScreen() {
         //1. add 'Asteroids' text
-        this.drawAsteroidHeading();
+        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
         //2. add 'Press to play' text
-        this.drawIntroText();
+        this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 500, 60, 'center');
         //3. add button with 'start' text
         const buttonImage: string = './assets/images/SpaceShooterRedux/PNG/UI/buttonBlue.png';
-        this.loadImage(buttonImage, this.drawButton);
+        const drawButtonImage = this.loadImage(buttonImage);
+
+
+
         //4. add Asteroid image
         const asteroidImage: string = './assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big' + Game.randomNumber(1, 4) + '.png';
         // this.loadImage(asteroidImage, this.writeAsteroidImageToStartScreen);
 
         const asteroid = new Asteroid(this.canvas.width / 2, this.canvas.height / 2, 0, 0, 90, 0);
         asteroid.loadImage(asteroidImage);
-    }
-
-    /**
-     * Draws the heading text of the game
-     */
-    private drawAsteroidHeading() {
-        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
-    }
-
-    /**
-     * Draws the intro text of the game
-     */
-    private drawIntroText() {
-        this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 500, 60, 'center');
+        
     }
 
     /**
@@ -147,8 +145,29 @@ class Game {
      * Method to initialize the level screen
      */
     public levelScreen() {
-        this.createAsteroids(Game.randomNumber(2, 5));
+        //this.createAsteroids(Game.randomNumber(2, 5));
+        //this.createAsteroids(300);
         this.loop();
+    }
+
+    private drawFPS(): number {
+        const t = performance.now();
+        const fps = Number((1000 / (t - this.t)).toFixed(0));
+
+        if(this.averageFpsList.length > 59) {
+            this.averageFpsList.pop();
+        }
+        this.averageFpsList.unshift(fps);
+
+        const averageFPS = (this.averageFpsList.reduce((a, b) => a + b) / this.averageFpsList.length).toFixed(0);
+
+        this.drawTextToCanvas(String(averageFPS), 300, 200, 25);
+
+        this.t = t;
+
+        // console.log(fps, averageFPS);
+
+        return Number(averageFPS);
     }
 
     /**
@@ -157,8 +176,8 @@ class Game {
      */
     private createAsteroids(num: number) {
         for (let i = 0; i < num; i++) {
-            const x: number = Game.randomNumber(100, this.canvas.width - 100);
-            const y: number = Game.randomNumber(100, this.canvas.height - 100);
+            const x: number = Game.randomNumber(0, this.canvas.width);
+            const y: number = Game.randomNumber(0, this.canvas.height);
 
             const vX: number = Game.randomNumber(1, 3);
             const vY: number = Game.randomNumber(1, 3);
@@ -175,20 +194,31 @@ class Game {
     public loop = () => {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        this.createAsteroids(1);
+
         this.asteroids.forEach(asteroid => {
             asteroid.draw(this.ctx);
             asteroid.move(this.canvas);
         });
 
         //1. load life images
-        const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
-        this.loadImage(lifeImage, this.drawLifeImages);
+        // const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
+        // this.loadImage(lifeImage, this.drawLifeImages);
         //2. draw current score
         this.drawCurrentScore();
         //4. draw player spaceship
-        const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
-        this.loadImage(shipImage, this.drawPlayerShip);
+        // const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
+        // this.loadImage(shipImage, this.drawPlayerShip);
 
+        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+            this.averageAsteroids.push(this.asteroids.length);
+
+            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+            
+            this.asteroids = [];
+            this.startTime = performance.now();
+        }
         requestAnimationFrame(this.loop);
     }
 
@@ -196,10 +226,19 @@ class Game {
      * Draws the player ship to the canvas
      * @param img Image given by the loadImage function
      */
-    private drawPlayerShip(img: HTMLImageElement) {
-        this.ctx.translate(-img.width / 2, -img.height / 2);
+    private drawPlayerShip() {
+        const source = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
+        const img = this.loadImage(source);
+
+        console.log(img.width);
+
+        this.ctx.save();
+
+        //this.ctx.translate(-img.width / 2, -img.height / 2);
         this.ctx.drawImage(img, this.canvas.width / 2, this.canvas.height / 2);
-        this.ctx.translate(img.width / 2, img.height / 2);
+        //this.ctx.translate(img.width / 2, img.height / 2);
+
+        this.ctx.restore();
     }
 
     /**
@@ -283,18 +322,24 @@ class Game {
      * @param {string} source - the name of the image file
      * @param {Function} callback - method that is invoked after the image is loaded
      */
-    private loadImage(source: string, callback: Function) {
+    // private loadImage(source: string, callback: Function) {
+    //     let imageElement = new Image();
+
+    //     // We must wait until the image file is loaded into the element
+    //     // We add an event listener
+    //     // We'll be using an arrow function for this, just because we must.
+    //     imageElement.addEventListener("load", () => {
+    //         callback.apply(this, [imageElement]);
+    //     });
+
+    //     // Now, set the src to start loading the image
+    //     imageElement.src = source;
+    // }
+    private loadImage(source: string): HTMLImageElement {
         let imageElement = new Image();
-
-        // We must wait until the image file is loaded into the element
-        // We add an event listener
-        // We'll be using an arrow function for this, just because we must.
-        imageElement.addEventListener("load", () => {
-            callback.apply(this, [imageElement]);
-        });
-
         // Now, set the src to start loading the image
         imageElement.src = source;
+        return imageElement;
     }
 
     /**

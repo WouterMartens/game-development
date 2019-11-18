@@ -1,59 +1,66 @@
 class Asteroid {
-    private _x: number;
-    private _y: number;
-    private _velocityX: number;
-    private _velocityY: number;
+    private _xPos: number;
+    private _yPos: number;
+    private _xVel: number;
+    private _yVel: number;
     private _rotation: number;
     private _rotationVelocity: number;
     public img: HTMLImageElement;
-    private source: string;
 
-    constructor(x: number, y: number, velocityX: number, velocityY: number, rotation: number, rotationVelocity: number) {
-        this._x = x;
-        this._y = y;
+    constructor(xPos: number, yPos: number, xVel: number, yVel: number, rotation: number, rotationVelocity: number) {
+        this._xPos = xPos;
+        this._yPos = yPos;
 
-        this._velocityX = velocityX;
-        this._velocityY = velocityY;
+        this._xVel = xVel;
+        this._yVel = yVel;
+
+        const negativeX = Math.random() < 0.5 ? true : false;
+        const negativeY = Math.random() < 0.5 ? true : false;
+
+        if (negativeX) { this.xVel *= -1; }
+        if (negativeY) { this.yVel *= -1; }
 
         this._rotation = Math.PI / 180 * rotation;
         this._rotationVelocity = rotationVelocity;
-        console.log(rotationVelocity);
+
+        const direction = Math.random() < 0.5 ? true : false;
+
+        if (direction) { this.rotationVelocity *= -1; }
 
         this.img = new Image();
-        this.source = this.getRandomAsteroid();
-        this.loadImage(this.source);
+        this.loadImage(this.getRandomAsteroid());
     }
 
-    get x(): number {
-        return this._x;
+    get xPos(): number {
+        return this._xPos;
     }
 
-    set x(value: number) {
-        this._x = value;
+    set xPos(value: number) {
+        this._xPos = value;
     }
 
-    get y(): number {
-        return this._y;
+    get yPos(): number {
+        return this._yPos;
     }
 
-    set y(value: number) {
-        this._y = value;
+    set yPos(value: number) {
+        this._yPos = value;
     }
 
-    get velocityX(): number {
-        return this._velocityX;
+    get xVel(): number {
+        return this._xVel;
     }
 
-    set velocityX(value: number) {
-        this._velocityX = value;
+    set xVel(value: number) {
+        this._xVel = value;
     }
 
-    get velocityY(): number {
-        return this._velocityY;
+    get yVel(): number {
+        return this._yVel;
     }
 
-    set velocityY(value: number) {
-        this._velocityY = value;
+    set yVel(value: number) {
+        this._yVel = value;
     }
 
     get rotation(): number {
@@ -77,17 +84,13 @@ class Asteroid {
     }
 
     public draw(ctx: CanvasRenderingContext2D) {
-        // ctx.translate(-this.img.width / 2, -this.img.height / 2);
-        // ctx.drawImage(this.img, this.x, this.y);
-        // ctx.translate(this.img.width / 2, this.img.height / 2);
-
         ctx.save();
 
-        ctx.translate(this.x + 0.5 * this.img.width, this.y + 0.5 * this.img.height);
+        ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
         ctx.rotate(this.rotation);
-        ctx.translate(-(this.x + 0.5 * this.img.width), -(this.y + 0.5 * this.img.height));
+        ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
 
-        ctx.drawImage(this.img, this.x, this.y);
+        ctx.drawImage(this.img, this.xPos, this.yPos);
 
         ctx.restore();
 
@@ -95,16 +98,18 @@ class Asteroid {
     }
 
     public move(canvas: HTMLCanvasElement) {
-        if (this.x >= canvas.width - this.img.width || this.x <= 0) {
-            this.velocityX *= -1;
+        if ((this.xPos >= canvas.width - this.img.width && this.xVel > 0 ) ||
+            (this.xPos <= 0 && this.xVel < 0)) {
+            this.xVel *= -1;
         }
 
-        if (this.y >= canvas.height - this.img.height || this.y <= 0) {
-            this.velocityY *= -1;
+        if ((this.yPos >= canvas.height - this.img.height && this.yVel > 0) || 
+            (this.yPos <= 0 && this.yVel < 0)) {
+            this.yVel *= -1;
         }
 
-        this.x += this.velocityX;
-        this.y += this.velocityY;
+        this.xPos += this.xVel;
+        this.yPos += this.yVel;
     }
 
     private getRandomAsteroid(): string {
@@ -137,5 +142,8 @@ class Asteroid {
         let number: number = Game.randomNumber(1, amount);
 
         return `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
+    }
+
+    public collided(xMin: number, yMin: number, xMax: number, yMax: number) {
     }
 }
