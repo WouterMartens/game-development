@@ -116,6 +116,27 @@ class Asteroid {
 }
 class Game {
     constructor(canvasId) {
+        this.canvas = canvasId;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.ctx = this.canvas.getContext('2d');
+        this.player = "Player one";
+        this.score = 400;
+        this.lives = 3;
+        this.keyboardListener = new KeyboardListener();
+        this.startScreen = new StartScreen(this.canvas, this.ctx);
+        this.currentScreen = this.startScreen;
+    }
+    static randomNumber(min, max) {
+        return Math.round(Math.random() * (max - min) + min);
+    }
+}
+let init = function () {
+    const Asteroids = new Game(document.getElementById('canvas'));
+};
+window.addEventListener('load', init);
+class GameScreen {
+    constructor(canvas, ctx) {
         this.loop = () => {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             requestAnimationFrame(this.loop);
@@ -127,6 +148,7 @@ class Game {
             this.ship.move(this.canvas);
             this.ship.draw(this.ctx);
             this.drawCurrentScore();
+            this.drawLifeImages();
             if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
                 this.averageAsteroids.push(this.asteroids.length);
                 console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
@@ -135,35 +157,23 @@ class Game {
                 this.startTime = performance.now();
             }
         };
-        this.canvas = canvasId;
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.ctx = this.canvas.getContext('2d');
-        this.player = "Player one";
+        this.canvas = canvas;
+        this.ctx = ctx;
         this.score = 400;
         this.lives = 3;
-        this.currentScreen = 'startScreen';
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
         this.ship = new Ship('./assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png', this.canvas.width / 2, this.canvas.height / 2, 5, 5, new KeyboardListener());
-        this.highscores = [
-            {
-                playerName: 'Loek',
-                score: 40000
-            },
-            {
-                playerName: 'Daan',
-                score: 34000
-            },
-            {
-                playerName: 'Rimmert',
-                score: 200
-            }
-        ];
-        this.levelScreen();
+        this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
+        this.loop();
+    }
+    loadImage(source) {
+        const img = new Image();
+        img.src = source;
+        return img;
     }
     drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
         this.ctx.save();
@@ -173,30 +183,10 @@ class Game {
         this.ctx.fillText(text, x, y);
         this.ctx.restore();
     }
-    startScreen() {
-        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
-        this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 500, 60, 'center');
-        const buttonImage = './assets/images/SpaceShooterRedux/PNG/UI/buttonBlue.png';
-        const drawButtonImage = this.loadImage(buttonImage);
-        const asteroidImage = './assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big' + Game.randomNumber(1, 4) + '.png';
-        const asteroid = new Asteroid(this.canvas.width / 2, this.canvas.height / 2, 0, 0, 90, 0);
-        asteroid.loadImage(asteroidImage);
-    }
-    drawButton(img) {
-        let x = this.canvas.width / 2 - img.width / 2;
-        let y = 700;
-        this.ctx.drawImage(img, x, y);
-        x += img.width / 2;
-        y += img.height / 3 * 2;
-        this.drawTextToCanvas('Play', x, y, 20, 'center', 'black');
-    }
-    writeAsteroidImageToStartScreen(img) {
-        this.ctx.translate(-img.width / 2, -img.height / 2);
-        this.ctx.drawImage(img, this.canvas.width / 2, 600);
-        this.ctx.translate(img.width / 2, img.height / 2);
-    }
-    levelScreen() {
-        this.loop();
+    drawCurrentScore() {
+        const x = 50;
+        const y = this.canvas.height - 50;
+        this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
     }
     drawFPS() {
         const t = performance.now();
@@ -222,60 +212,12 @@ class Game {
             this.asteroids.push(asteroid);
         }
     }
-    drawPlayerShip() {
-        const source = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
-        const img = this.loadImage(source);
-        console.log(img.width);
-        this.ctx.save();
-        this.ctx.drawImage(img, this.canvas.width / 2, this.canvas.height / 2);
-        this.ctx.restore();
-    }
-    drawLifeImages(img) {
+    drawLifeImages() {
         for (let i = 1; i <= this.lives; i++) {
-            this.ctx.drawImage(img, img.width * i + 10 * i, 10);
+            this.ctx.drawImage(this.lifeImage, this.lifeImage.width * i + 10 * i, 10);
         }
-    }
-    drawCurrentScore() {
-        const x = 50;
-        const y = this.canvas.height - 50;
-        this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
-    }
-    titleScreen() {
-        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
-        this.drawHighscores();
-    }
-    drawHighscores() {
-        let longestLine = 0;
-        let lines = [];
-        const fontSize = 60;
-        this.ctx.font = fontSize + 'px Roboto';
-        for (let i = 0; i < this.highscores.length; i++) {
-            const player = this.highscores[i];
-            const string = `${i + 1}: ${player.playerName}, score: ${player.score}`;
-            const textWidth = this.ctx.measureText(string).width;
-            lines.push(string);
-            if (textWidth > longestLine) {
-                longestLine = textWidth;
-            }
-        }
-        lines.forEach((line, i) => {
-            this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
-            console.log(line, longestLine);
-        });
-    }
-    loadImage(source) {
-        let imageElement = new Image();
-        imageElement.src = source;
-        return imageElement;
-    }
-    static randomNumber(min, max) {
-        return Math.round(Math.random() * (max - min) + min);
     }
 }
-let init = function () {
-    const Asteroids = new Game(document.getElementById('canvas'));
-};
-window.addEventListener('load', init);
 class KeyboardListener {
     constructor() {
         this.keyDown = (ev) => {
@@ -351,6 +293,8 @@ class Ship {
             this.yPos -= Math.cos(this.rotation) * this.yVel;
         }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
+            this.xPos -= Math.sin(this.rotation) * this.xVel;
+            this.yPos += Math.cos(this.rotation) * this.yVel;
         }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_SPACE)) {
             this.shoot();
@@ -379,11 +323,93 @@ class Ship {
 }
 class StartScreen {
     constructor(canvas, ctx) {
+        this.draw = () => {
+            this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
+            this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 350, 60, 'center');
+            this.drawButton(this.button);
+            this.ctx.drawImage(this.asteroid, this.canvas.width / 2 - this.asteroid.width / 2, 400);
+            window.requestAnimationFrame(this.draw);
+        };
         this.canvas = canvas;
         this.ctx = ctx;
+        this.button = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/buttonBlue.png');
+        this.asteroid = this.loadImage('./assets/images/SpaceShooterRedux/PNG/Meteors/meteorBrown_big1.png');
         this.draw();
     }
-    draw() {
+    loadImage(source) {
+        const img = new Image();
+        img.src = source;
+        return img;
+    }
+    drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
+        this.ctx.save();
+        this.ctx.fillStyle = colour;
+        this.ctx.font = fontSize + 'px Roboto';
+        this.ctx.textAlign = alignment;
+        this.ctx.fillText(text, x, y);
+        this.ctx.restore();
+    }
+    drawButton(img) {
+        this.ctx.save();
+        let x = this.canvas.width / 2 - img.width / 2;
+        let y = 525;
+        this.ctx.drawImage(img, x, y);
+        x += img.width / 2;
+        y += img.height / 3 * 2;
+        this.drawTextToCanvas('Play', x, y, 20, 'center', 'black');
+        this.ctx.restore();
+    }
+}
+class TitleScreen {
+    constructor(canvas, ctx) {
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.score = 0;
+        this.highscores = [
+            {
+                playerName: 'Loek',
+                score: 40000
+            },
+            {
+                playerName: 'Daan',
+                score: 34000
+            },
+            {
+                playerName: 'Rimmert',
+                score: 200
+            }
+        ];
+    }
+    drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
+        this.ctx.save();
+        this.ctx.fillStyle = colour;
+        this.ctx.font = fontSize + 'px Roboto';
+        this.ctx.textAlign = alignment;
+        this.ctx.fillText(text, x, y);
+        this.ctx.restore();
+    }
+    titleScreen() {
+        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
+        this.drawHighscores();
+    }
+    drawHighscores() {
+        let longestLine = 0;
+        let lines = [];
+        const fontSize = 60;
+        this.ctx.font = fontSize + 'px Roboto';
+        for (let i = 0; i < this.highscores.length; i++) {
+            const player = this.highscores[i];
+            const string = `${i + 1}: ${player.playerName}, score: ${player.score}`;
+            const textWidth = this.ctx.measureText(string).width;
+            lines.push(string);
+            if (textWidth > longestLine) {
+                longestLine = textWidth;
+            }
+        }
+        lines.forEach((line, i) => {
+            this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
+            console.log(line, longestLine);
+        });
     }
 }
 //# sourceMappingURL=app.js.map

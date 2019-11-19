@@ -81,7 +81,8 @@ class Ship {
             this.yPos -= Math.cos(this.rotation) * this.yVel;
         }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
-            //this.yPos += this.yVel;
+            this.xPos -= Math.sin(this.rotation) * this.xVel;
+            this.yPos += Math.cos(this.rotation) * this.yVel;
         }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_SPACE)) {
             this.shoot();
