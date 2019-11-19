@@ -1,26 +1,11 @@
-interface Player {
-    playerName: string,
-    score: number
-}
-
 class Game {
     // Global attributes for canvas
     // Readonly attributes are read-only. They can only be initialized in the constructor
     private readonly canvas: HTMLCanvasElement; 
     private readonly ctx: CanvasRenderingContext2D;
-
-    // Some global player attributes
-    private readonly player: string;
-    private readonly score: number;
-    private readonly lives: number;
-    private readonly highscores: Array<Player>;
-
-    private startScreen: StartScreen;
-    private gameScreen: GameScreen;
-    private titleScreen: TitleScreen;
-    private currentScreen: StartScreen | GameScreen | TitleScreen | string;
-
+    private currentScreen: StartScreen | GameScreen | TitleScreen;
     private keyboardListener: KeyboardListener;
+    private t: DOMHighResTimeStamp;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -29,21 +14,40 @@ class Game {
         this.canvas.height = window.innerHeight;
         // Set the context of the canvas
         this.ctx = this.canvas.getContext('2d');
-
-        this.player = "Player one";
-        this.score = 400;
-        this.lives = 3;
         
+        this.t = 0;
+
         this.keyboardListener = new KeyboardListener();
+        this.currentScreen = new StartScreen(this.canvas, this.ctx);
+        this.loop();
+    }
 
+    private switchScreen() {
+        const t = performance.now();
 
-        // All screens: uncomment to activate
-        this.startScreen = new StartScreen(this.canvas, this.ctx);
-        this.currentScreen = this.startScreen;
+        if (t - this.t > 1000) {
+            if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
+                this.currentScreen = new GameScreen(this.canvas, this.ctx);
+                this.t = t;
+            } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof GameScreen) {
+                this.currentScreen = new TitleScreen(this.canvas, this.ctx);
+                this.t = t;
+            } else if ((this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) || this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC)) &&
+                        this.currentScreen instanceof TitleScreen) {
+                this.currentScreen = new StartScreen(this.canvas, this.ctx);
+                this.t = t;
+            }
+            
+        }
+    }
 
-        // this.gameScreen = new GameScreen(this.canvas, this.ctx);
+    public loop = () => {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // this.titleScreen = new TitleScreen(this.canvas, this.ctx);
+        this.switchScreen();
+        this.currentScreen.draw();
+
+        requestAnimationFrame(this.loop);
     }
 
     /**

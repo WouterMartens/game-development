@@ -116,16 +116,38 @@ class Asteroid {
 }
 class Game {
     constructor(canvasId) {
+        this.loop = () => {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.switchScreen();
+            this.currentScreen.draw();
+            requestAnimationFrame(this.loop);
+        };
         this.canvas = canvasId;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.ctx = this.canvas.getContext('2d');
-        this.player = "Player one";
-        this.score = 400;
-        this.lives = 3;
+        this.t = 0;
         this.keyboardListener = new KeyboardListener();
-        this.startScreen = new StartScreen(this.canvas, this.ctx);
-        this.currentScreen = this.startScreen;
+        this.currentScreen = new StartScreen(this.canvas, this.ctx);
+        this.loop();
+    }
+    switchScreen() {
+        const t = performance.now();
+        if (t - this.t > 1000) {
+            if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
+                this.currentScreen = new GameScreen(this.canvas, this.ctx);
+                this.t = t;
+            }
+            else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof GameScreen) {
+                this.currentScreen = new TitleScreen(this.canvas, this.ctx);
+                this.t = t;
+            }
+            else if ((this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) || this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC)) &&
+                this.currentScreen instanceof TitleScreen) {
+                this.currentScreen = new StartScreen(this.canvas, this.ctx);
+                this.t = t;
+            }
+        }
     }
     static randomNumber(min, max) {
         return Math.round(Math.random() * (max - min) + min);
@@ -137,10 +159,10 @@ let init = function () {
 window.addEventListener('load', init);
 class GameScreen {
     constructor(canvas, ctx) {
-        this.loop = () => {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            requestAnimationFrame(this.loop);
-            this.createAsteroids(1);
+        this.draw = () => {
+            if (this.TEST) {
+                this.createAsteroids(1);
+            }
             this.asteroids.forEach(asteroid => {
                 asteroid.move(this.canvas);
                 asteroid.draw(this.ctx);
@@ -149,16 +171,19 @@ class GameScreen {
             this.ship.draw(this.ctx);
             this.drawCurrentScore();
             this.drawLifeImages();
-            if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-                this.averageAsteroids.push(this.asteroids.length);
-                console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                    (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
-                this.asteroids = [];
-                this.startTime = performance.now();
+            if (this.TEST) {
+                if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+                    this.averageAsteroids.push(this.asteroids.length);
+                    console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+                        (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+                    this.asteroids = [];
+                    this.startTime = performance.now();
+                }
             }
         };
         this.canvas = canvas;
         this.ctx = ctx;
+        this.TEST = false;
         this.score = 400;
         this.lives = 3;
         this.t = performance.now();
@@ -166,9 +191,9 @@ class GameScreen {
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
+        this.createAsteroids(Game.randomNumber(3, 7));
         this.ship = new Ship('./assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png', this.canvas.width / 2, this.canvas.height / 2, 5, 5, new KeyboardListener());
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
-        this.loop();
     }
     loadImage(source) {
         const img = new Image();
@@ -328,7 +353,6 @@ class StartScreen {
             this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 350, 60, 'center');
             this.drawButton(this.button);
             this.ctx.drawImage(this.asteroid, this.canvas.width / 2 - this.asteroid.width / 2, 400);
-            window.requestAnimationFrame(this.draw);
         };
         this.canvas = canvas;
         this.ctx = ctx;
@@ -350,18 +374,23 @@ class StartScreen {
         this.ctx.restore();
     }
     drawButton(img) {
-        this.ctx.save();
-        let x = this.canvas.width / 2 - img.width / 2;
-        let y = 525;
-        this.ctx.drawImage(img, x, y);
-        x += img.width / 2;
-        y += img.height / 3 * 2;
-        this.drawTextToCanvas('Play', x, y, 20, 'center', 'black');
-        this.ctx.restore();
+        if (img.naturalWidth > 0) {
+            this.ctx.save();
+            let x = this.canvas.width / 2 - img.width / 2;
+            let y = 525;
+            this.ctx.drawImage(img, x, y);
+            x += img.width / 2;
+            y += img.height / 3 * 2;
+            this.drawTextToCanvas('Play', x, y, 20, 'center', 'black');
+            this.ctx.restore();
+        }
     }
 }
 class TitleScreen {
     constructor(canvas, ctx) {
+        this.draw = () => {
+            this.drawHighscores();
+        };
         this.canvas = canvas;
         this.ctx = ctx;
         this.score = 0;
@@ -408,7 +437,6 @@ class TitleScreen {
         }
         lines.forEach((line, i) => {
             this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
-            console.log(line, longestLine);
         });
     }
 }

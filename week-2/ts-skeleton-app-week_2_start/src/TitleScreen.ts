@@ -1,9 +1,16 @@
+interface Player {
+    playerName: string,
+    score: number
+}
+
 class TitleScreen {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
 
-    private score: number;
-    private highscores: any[];
+    private readonly player: string;
+    private readonly score: number;
+    private readonly lives: number;
+    private readonly highscores: Array<Player>;
 
     constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
         this.canvas = canvas;
@@ -82,9 +89,12 @@ class TitleScreen {
 
         lines.forEach((line, i) => {
             this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
-            console.log(line, longestLine);
+            // console.log(line, longestLine);
         });
 
     }
 
+    public draw = () => {
+        this.drawHighscores();
+    }
 }

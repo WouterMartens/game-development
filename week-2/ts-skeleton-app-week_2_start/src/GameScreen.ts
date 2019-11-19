@@ -2,6 +2,8 @@ class GameScreen {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
 
+    private textIsDrawn: boolean;
+
     private score: number;
     private lives: number;
 
@@ -15,9 +17,13 @@ class GameScreen {
 
     private lifeImage: HTMLImageElement;
 
+    private TEST: boolean;
+
     constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
         this.canvas = canvas;
         this.ctx = ctx;
+
+        this.TEST = false;
 
         this.score = 400;
         this.lives = 3;
@@ -28,6 +34,7 @@ class GameScreen {
         this.averageAsteroids = [];
 
         this.asteroids = [];
+        this.createAsteroids(Game.randomNumber(3, 7));
 
         this.ship = new Ship(
             './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png',
@@ -40,7 +47,7 @@ class GameScreen {
 
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
 
-        this.loop();
+        // this.loop();
     }
 
     public loadImage(source: string): HTMLImageElement {
@@ -127,12 +134,11 @@ class GameScreen {
         }
     }
 
-    public loop = () => {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        requestAnimationFrame(this.loop);
-
-        this.createAsteroids(1);
+    //public loop = () => {
+    public draw = () => {
+        if (this.TEST) {
+            this.createAsteroids(1);
+        }
 
         this.asteroids.forEach(asteroid => {
             asteroid.move(this.canvas);
@@ -145,14 +151,16 @@ class GameScreen {
         this.drawCurrentScore();
         this.drawLifeImages();
 
-        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-            this.averageAsteroids.push(this.asteroids.length);
+        if (this.TEST) {
+            if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+                this.averageAsteroids.push(this.asteroids.length);
 
-            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+                console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+                    (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
 
-            this.asteroids = [];
-            this.startTime = performance.now();
+                this.asteroids = [];
+                this.startTime = performance.now();
+            }
         }
     }
 }
