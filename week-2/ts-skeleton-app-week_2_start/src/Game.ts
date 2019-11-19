@@ -15,6 +15,8 @@ class Game {
     private readonly lives: number;
     private readonly highscores: Array<Player>;
 
+    private currentScreen: StartScreen | GameScreen | TitleScreen;
+
     private t: DOMHighResTimeStamp;
     private startTime: DOMHighResTimeStamp;
     private averageFpsList: DOMHighResTimeStamp[];
@@ -22,6 +24,8 @@ class Game {
 
     //private asteroid: Asteroid;
     private asteroids: Asteroid[];
+
+    private ship: Ship;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -35,12 +39,23 @@ class Game {
         this.score = 400;
         this.lives = 3;
 
+        this.currentScreen = 'startScreen';
+
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
         this.averageAsteroids = [];
 
         this.asteroids = [];
+
+        this.ship = new Ship(
+            './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png',
+            this.canvas.width / 2,
+            this.canvas.height / 2,
+            5,
+            5,
+            new KeyboardListener()
+        );
 
         this.highscores = [
             {
@@ -194,21 +209,23 @@ class Game {
     public loop = () => {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        requestAnimationFrame(this.loop);
+
         this.createAsteroids(1);
 
         this.asteroids.forEach(asteroid => {
-            asteroid.draw(this.ctx);
             asteroid.move(this.canvas);
+            asteroid.draw(this.ctx);
         });
+
+        this.ship.move(this.canvas);
+        this.ship.draw(this.ctx);
 
         //1. load life images
         // const lifeImage: string = './assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png';
         // this.loadImage(lifeImage, this.drawLifeImages);
         //2. draw current score
         this.drawCurrentScore();
-        //4. draw player spaceship
-        // const shipImage: string = './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png';
-        // this.loadImage(shipImage, this.drawPlayerShip);
 
         if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
             this.averageAsteroids.push(this.asteroids.length);
@@ -219,7 +236,6 @@ class Game {
             this.asteroids = [];
             this.startTime = performance.now();
         }
-        requestAnimationFrame(this.loop);
     }
 
     /**

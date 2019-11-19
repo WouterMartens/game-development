@@ -84,17 +84,19 @@ class Asteroid {
     }
 
     public draw(ctx: CanvasRenderingContext2D) {
-        ctx.save();
+        if (this.img.naturalWidth > 0) {
+            ctx.save();
 
-        ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
-        ctx.rotate(this.rotation);
-        ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
+            ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
+            ctx.rotate(this.rotation);
+            ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
 
-        ctx.drawImage(this.img, this.xPos, this.yPos);
+            ctx.drawImage(this.img, this.xPos, this.yPos);
 
-        ctx.restore();
+            ctx.restore();
 
-        this.rotation += this.rotationVelocity;
+            this.rotation += this.rotationVelocity;
+        }
     }
 
     public move(canvas: HTMLCanvasElement) {

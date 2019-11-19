@@ -61,13 +61,15 @@ class Asteroid {
         this.img.src = source;
     }
     draw(ctx) {
-        ctx.save();
-        ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
-        ctx.rotate(this.rotation);
-        ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
-        ctx.drawImage(this.img, this.xPos, this.yPos);
-        ctx.restore();
-        this.rotation += this.rotationVelocity;
+        if (this.img.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
+            ctx.rotate(this.rotation);
+            ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
+            ctx.drawImage(this.img, this.xPos, this.yPos);
+            ctx.restore();
+            this.rotation += this.rotationVelocity;
+        }
     }
     move(canvas) {
         if ((this.xPos >= canvas.width - this.img.width && this.xVel > 0) ||
@@ -116,11 +118,14 @@ class Game {
     constructor(canvasId) {
         this.loop = () => {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            requestAnimationFrame(this.loop);
             this.createAsteroids(1);
             this.asteroids.forEach(asteroid => {
-                asteroid.draw(this.ctx);
                 asteroid.move(this.canvas);
+                asteroid.draw(this.ctx);
             });
+            this.ship.move(this.canvas);
+            this.ship.draw(this.ctx);
             this.drawCurrentScore();
             if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
                 this.averageAsteroids.push(this.asteroids.length);
@@ -129,7 +134,6 @@ class Game {
                 this.asteroids = [];
                 this.startTime = performance.now();
             }
-            requestAnimationFrame(this.loop);
         };
         this.canvas = canvasId;
         this.canvas.width = window.innerWidth;
@@ -138,11 +142,13 @@ class Game {
         this.player = "Player one";
         this.score = 400;
         this.lives = 3;
+        this.currentScreen = 'startScreen';
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
+        this.ship = new Ship('./assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png', this.canvas.width / 2, this.canvas.height / 2, 5, 5, new KeyboardListener());
         this.highscores = [
             {
                 playerName: 'Loek',
@@ -270,4 +276,114 @@ let init = function () {
     const Asteroids = new Game(document.getElementById('canvas'));
 };
 window.addEventListener('load', init);
+class KeyboardListener {
+    constructor() {
+        this.keyDown = (ev) => {
+            this.keyCodeStates[ev.keyCode] = true;
+        };
+        this.keyUp = (ev) => {
+            this.keyCodeStates[ev.keyCode] = false;
+        };
+        this.keyCodeStates = new Array();
+        window.addEventListener("keydown", this.keyDown);
+        window.addEventListener("keyup", this.keyUp);
+    }
+    isKeyDown(keyCode) {
+        return this.keyCodeStates[keyCode] === true;
+    }
+}
+KeyboardListener.KEY_ESC = 27;
+KeyboardListener.KEY_SPACE = 32;
+KeyboardListener.KEY_LEFT = 37;
+KeyboardListener.KEY_UP = 38;
+KeyboardListener.KEY_RIGHT = 39;
+KeyboardListener.KEY_DOWN = 40;
+KeyboardListener.KEY_S = 83;
+class Ship {
+    constructor(imgUrl, xPos, yPos, xVel, yVel, keyboardListener) {
+        this._xPos = xPos;
+        this._yPos = yPos;
+        this._xVel = xVel;
+        this._yVel = yVel;
+        this._rotation = 0;
+        this.loadImage(imgUrl);
+        this.keyboardListener = keyboardListener;
+    }
+    get xPos() {
+        return this._xPos;
+    }
+    set xPos(value) {
+        this._xPos = value;
+    }
+    get yPos() {
+        return this._yPos;
+    }
+    set yPos(value) {
+        this._yPos = value;
+    }
+    get xVel() {
+        return this._xVel;
+    }
+    set xVel(value) {
+        this._xVel = value;
+    }
+    get yVel() {
+        return this._yVel;
+    }
+    set yVel(value) {
+        this._yVel = value;
+    }
+    get rotation() {
+        return this._rotation;
+    }
+    set rotation(value) {
+        this._rotation = value;
+    }
+    move(canvas) {
+        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_RIGHT)) {
+            this.rotation += this.degreesToRadian(3);
+        }
+        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_LEFT)) {
+            this.rotation -= this.degreesToRadian(3);
+        }
+        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_UP)) {
+            this.xPos += Math.sin(this.rotation) * this.xVel;
+            this.yPos -= Math.cos(this.rotation) * this.yVel;
+        }
+        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
+        }
+        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_SPACE)) {
+            this.shoot();
+        }
+    }
+    shoot() {
+        console.log('pew pew');
+    }
+    draw(ctx) {
+        if (this.img.naturalWidth > 0) {
+            ctx.save();
+            ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
+            ctx.rotate(this.rotation);
+            ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
+            ctx.drawImage(this.img, this.xPos, this.yPos);
+            ctx.restore();
+        }
+    }
+    loadImage(source) {
+        this.img = new Image();
+        this.img.src = source;
+    }
+    degreesToRadian(num) {
+        return Math.PI / 180 * num;
+    }
+}
+class StartScreen {
+    constructor(canvas, ctx) {
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.draw();
+    }
+    draw() {
+    }
+}
 //# sourceMappingURL=app.js.map
