@@ -6,6 +6,7 @@ class Game {
     private currentScreen: StartScreen | GameScreen | TitleScreen;
     private keyboardListener: KeyboardListener;
     private t: DOMHighResTimeStamp;
+    private isPaused: boolean;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -19,6 +20,7 @@ class Game {
 
         this.keyboardListener = new KeyboardListener();
         this.currentScreen = new StartScreen(this.canvas, this.ctx);
+        this.isPaused = false;
         this.loop();
     }
 
@@ -37,7 +39,6 @@ class Game {
                 this.currentScreen = new StartScreen(this.canvas, this.ctx);
                 this.t = t;
             }
-            
         }
     }
 

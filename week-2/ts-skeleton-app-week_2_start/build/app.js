@@ -129,6 +129,7 @@ class Game {
         this.t = 0;
         this.keyboardListener = new KeyboardListener();
         this.currentScreen = new StartScreen(this.canvas, this.ctx);
+        this.isPaused = false;
         this.loop();
     }
     switchScreen() {
@@ -266,6 +267,7 @@ KeyboardListener.KEY_UP = 38;
 KeyboardListener.KEY_RIGHT = 39;
 KeyboardListener.KEY_DOWN = 40;
 KeyboardListener.KEY_S = 83;
+KeyboardListener.KEY_P = 80;
 class Ship {
     constructor(imgUrl, xPos, yPos, xVel, yVel, keyboardListener) {
         this._xPos = xPos;

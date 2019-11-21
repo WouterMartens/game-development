@@ -2,8 +2,6 @@ class GameScreen {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
 
-    private textIsDrawn: boolean;
-
     private score: number;
     private lives: number;
 
