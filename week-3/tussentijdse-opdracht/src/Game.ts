@@ -31,7 +31,7 @@ class Game {
             const y: number = this.randomNumber(200, this.canvas.height - 200);
             const direction: number = this.randomNumber(0, 359);
             const velocity: number = this.randomNumber(1, 5);
-            const radius: number = this.randomNumber(10, 50);
+            const radius: number = this.randomNumber(10, 200);
             const colour: string = '#' + Math.floor(Math.random()*16777215).toString(16);
 
             // Creates a ball object

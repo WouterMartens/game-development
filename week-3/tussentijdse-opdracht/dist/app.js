@@ -14,6 +14,10 @@ class Ball {
     }
     /**
      * Handles the movement of the ball across the canvas (and bouncing against the wall)
+     *
+     * Note to self: including the velocity check (to fix the stuck on edge bug) probably doesn't work
+     * because of the way I used Math.sin/Math.cos. Velocity might never be (or is always) negative?
+     *
      * @param canvas Uses canvas to find the bounding box
      */
     move(canvas) {
@@ -85,7 +89,7 @@ class Game {
             const y = this.randomNumber(200, this.canvas.height - 200);
             const direction = this.randomNumber(0, 359);
             const velocity = this.randomNumber(1, 5);
-            const radius = this.randomNumber(10, 50);
+            const radius = this.randomNumber(10, 200);
             const colour = '#' + Math.floor(Math.random() * 16777215).toString(16);
             // Creates a ball object
             const ball = new Ball(x, y, direction, velocity, radius, colour);
