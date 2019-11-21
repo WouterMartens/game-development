@@ -23,7 +23,7 @@ class Game {
      * Creates a given number of balls with random properties
      * @param num Amount of balls to create
      */
-    createBalls(num: number) {
+    private createBalls(num: number) {
         // One loop creates one ball
         for (let i = 0; i < num; i++) {
             // Sets random values for each parameter
@@ -47,7 +47,7 @@ class Game {
      * 
      * Clears the screen, moves and draws all of the created balls
      */
-    loop = () => {
+    private loop = () => {
         // Clears the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -66,7 +66,7 @@ class Game {
      * @param min Minimal value
      * @param max Maximal value
      */
-    randomNumber(min: number, max: number): number {
+    private randomNumber(min: number, max: number): number {
         return Math.round(Math.random() * (max - min) + min);
     }
 }

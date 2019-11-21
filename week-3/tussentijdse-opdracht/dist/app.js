@@ -13,7 +13,7 @@ class Ball {
         this.colour = colour;
     }
     /**
-     * Handles the movement of the ball across the canvas ( and bouncing against the wall)
+     * Handles the movement of the ball across the canvas (and bouncing against the wall)
      * @param canvas Uses canvas to find the bounding box
      */
     move(canvas) {
