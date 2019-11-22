@@ -1,20 +1,18 @@
+/// <reference path="GameScreen.ts" />
+
 interface Player {
     playerName: string,
     score: number
 }
 
-class TitleScreen {
-    private canvas: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
-
+class TitleScreen extends GameScreen {
     private readonly player: string;
     private readonly score: number;
     private readonly lives: number;
     private readonly highscores: Array<Player>;
 
     constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-        this.canvas = canvas;
-        this.ctx = ctx;
+        super(canvas, ctx);
 
         this.score = 0;
         this.highscores = [
@@ -32,33 +30,6 @@ class TitleScreen {
             }
         ];
 
-    }
-
-    /**
-     * Draws text to the canvas according to the given parameters
-     * @param text String that needs to be shown on the canvas
-     * @param x starting X coordinate of the text
-     * @param y starting Y coordinate of the text
-     * @param fontSize font size of the text in pixels
-     * @param alignment where to start drawing the text (left, center, etc.), standard is center
-     * @param colour Colour of the text, standard is white
-     */
-    private drawTextToCanvas(
-        text: string,
-        x: number,
-        y: number, 
-        fontSize: number, 
-        alignment: CanvasTextAlign = 'center',
-        colour: string = 'white'
-    ) {
-        this.ctx.save();
-
-        this.ctx.fillStyle = colour;
-        this.ctx.font = fontSize + 'px Roboto';
-        this.ctx.textAlign = alignment;
-        this.ctx.fillText(text, x, y);
-
-        this.ctx.restore();
     }
 
     public titleScreen() {

@@ -3,10 +3,9 @@ class Game {
     // Readonly attributes are read-only. They can only be initialized in the constructor
     private readonly canvas: HTMLCanvasElement; 
     private readonly ctx: CanvasRenderingContext2D;
-    private currentScreen: StartScreen | GameScreen | TitleScreen;
+    private currentScreen: GameScreen;
     private keyboardListener: KeyboardListener;
     private t: DOMHighResTimeStamp;
-    private isPaused: boolean;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -20,7 +19,6 @@ class Game {
 
         this.keyboardListener = new KeyboardListener();
         this.currentScreen = new StartScreen(this.canvas, this.ctx);
-        this.isPaused = false;
         this.loop();
     }
 
@@ -29,9 +27,9 @@ class Game {
 
         if (t - this.t > 1000) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
-                this.currentScreen = new GameScreen(this.canvas, this.ctx);
+                this.currentScreen = new LevelScreen(this.canvas, this.ctx);
                 this.t = t;
-            } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof GameScreen) {
+            } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof LevelScreen) {
                 this.currentScreen = new TitleScreen(this.canvas, this.ctx);
                 this.t = t;
             } else if ((this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) || this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC)) &&
@@ -46,7 +44,7 @@ class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.switchScreen();
-        this.currentScreen.draw();
+        this.currentScreen.draw(); // polymorphisme 
 
         requestAnimationFrame(this.loop);
     }
