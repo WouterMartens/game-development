@@ -11,7 +11,7 @@ class Asteroid extends GameObject {
         if (negativeY) { this.yVel *= -1; }
         if (direction) { this.rotationVel *= -1; }
 
-        this._rotationVel = Math.PI / 180 * rotationVel;
+        this.rotationVel = Math.PI / 180 * rotationVel;
 
         this.loadImage(this.getRandomAsteroid());
     }
@@ -29,6 +29,8 @@ class Asteroid extends GameObject {
 
         this.xPos += this.xVel;
         this.yPos += this.yVel;
+        // this.xPos += Math.sin(this.rotation) * this.xVel;
+        // this.yPos -= Math.cos(this.rotation) * this.yVel;
     }
 
     private getRandomAsteroid(): string {
@@ -63,6 +65,5 @@ class Asteroid extends GameObject {
         return `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
     }
 
-    public collided(xMin: number, yMin: number, xMax: number, yMax: number) {
-    }
+    // public collided(xMin: number, yMin: number, xMax: number, yMax: number) { }
 }

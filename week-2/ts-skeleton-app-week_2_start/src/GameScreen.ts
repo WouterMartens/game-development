@@ -18,7 +18,7 @@ class GameScreen {
      * @param alignment where to start drawing the text (left, center, etc.), standard is center
      * @param colour Colour of the text, standard is white
      */
-    protected drawTextToCanvas(
+    public drawTextToCanvas(
         text: string,
         x: number,
         y: number, 

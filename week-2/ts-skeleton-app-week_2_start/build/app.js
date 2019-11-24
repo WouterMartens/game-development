@@ -54,6 +54,24 @@ class GameObject {
             this.rotation += this.rotationVel;
         }
     }
+    drawTextToCanvas(text, x, y, ctx, fontSize = 10, alignment = 'left', colour = 'white') {
+        ctx.save();
+        ctx.fillStyle = colour;
+        ctx.font = fontSize + 'px Roboto';
+        ctx.textAlign = alignment;
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    }
+    debug(ctx) {
+        const x = this.xPos + this.img.width;
+        let y = this.yPos + this.img.height;
+        const size = 10;
+        this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
+    }
     loadImage(source) {
         this.img = new Image();
         this.img.src = source;
@@ -74,7 +92,7 @@ class Asteroid extends GameObject {
         if (direction) {
             this.rotationVel *= -1;
         }
-        this._rotationVel = Math.PI / 180 * rotationVel;
+        this.rotationVel = Math.PI / 180 * rotationVel;
         this.loadImage(this.getRandomAsteroid());
     }
     move(canvas) {
@@ -117,7 +135,50 @@ class Asteroid extends GameObject {
         let number = Game.randomNumber(1, amount);
         return `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
     }
-    collided(xMin, yMin, xMax, yMax) {
+}
+class Bullet extends GameObject {
+    constructor(xPos, yPos, xVel, yVel, rotation, ship) {
+        super(xPos, yPos, xVel, yVel, rotation);
+        this.xPos = xPos;
+        this.yPos = yPos;
+        this.rotation = rotation;
+        this.xVel = xVel;
+        this.yVel = yVel;
+        this.width = 3;
+        this.height = 10;
+        this.isOffScreen = false;
+        this.ship = ship;
+    }
+    move(canvas) {
+        if ((this.xPos >= canvas.width + this.height) ||
+            (this.xPos <= 0 - this.height)) {
+            this.isOffScreen = true;
+        }
+        if ((this.yPos >= canvas.height + this.height) ||
+            (this.yPos <= 0 - this.height)) {
+            this.isOffScreen = true;
+        }
+        this.xPos += Math.sin(this.rotation) * this.xVel;
+        this.yPos -= Math.cos(this.rotation) * this.yVel;
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.xPos + 0.5 * this.ship.img.width, this.yPos + 0.5 * this.ship.img.height);
+        ctx.rotate(this.rotation);
+        ctx.translate(-(this.xPos + 0.5 * this.ship.img.width), -(this.yPos + 0.5 * this.ship.img.height));
+        ctx.fillStyle = 'white';
+        ctx.fillRect(this.xPos + this.ship.img.width / 2 - this.width / 2, this.yPos, this.width, this.height);
+        ctx.restore();
+    }
+    debug(ctx) {
+        const x = this.xPos + this.width + 10;
+        let y = this.yPos + this.height + 10;
+        const size = 10;
+        this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
     }
 }
 class Game {
@@ -132,6 +193,7 @@ class Game {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
         this.ctx = this.canvas.getContext('2d');
+        this.player = new Player('hi', 1);
         this.t = 0;
         this.keyboardListener = new KeyboardListener();
         this.currentScreen = new StartScreen(this.canvas, this.ctx);
@@ -141,7 +203,7 @@ class Game {
         const t = performance.now();
         if (t - this.t > 1000) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
-                this.currentScreen = new LevelScreen(this.canvas, this.ctx);
+                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
                 this.t = t;
             }
             else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof LevelScreen) {
@@ -178,6 +240,25 @@ class GameScreen {
         this.ctx.restore();
     }
 }
+class GameText {
+    constructor(ctx, text, x, y, size, alignment = 'center', colour = 'white') {
+        this.ctx = ctx;
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.alignment = alignment;
+        this.colour = colour;
+    }
+    draw() {
+        this.ctx.save();
+        this.ctx.fillStyle = this.colour;
+        this.ctx.font = this.size + 'px Roboto';
+        this.ctx.textAlign = this.alignment;
+        this.ctx.fillText(this.text, this.x, this.y);
+        this.ctx.restore();
+    }
+}
 class KeyboardListener {
     constructor() {
         this.keyDown = (ev) => {
@@ -203,40 +284,31 @@ KeyboardListener.KEY_DOWN = 40;
 KeyboardListener.KEY_S = 83;
 KeyboardListener.KEY_P = 80;
 class LevelScreen extends GameScreen {
-    constructor(canvas, ctx) {
+    constructor(canvas, ctx, players) {
         super(canvas, ctx);
         this.draw = () => {
-            if (this.TEST) {
+            if (this.PERFORMANCE_TEST) {
                 this.createAsteroids(1);
+                this.drawTest();
             }
-            this.asteroids.forEach(asteroid => {
-                asteroid.move(this.canvas);
-                asteroid.draw(this.ctx);
-            });
-            this.ship.move(this.canvas);
-            this.ship.draw(this.ctx);
+            if (this.DEBUG) {
+                this.drawFPS();
+            }
+            this.drawAsteroids();
+            this.drawPlayers();
             this.drawCurrentScore();
             this.drawLifeImages();
-            if (this.TEST) {
-                if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-                    this.averageAsteroids.push(this.asteroids.length);
-                    console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                        (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
-                    this.asteroids = [];
-                    this.startTime = performance.now();
-                }
-            }
         };
-        this.TEST = false;
-        this.score = 400;
-        this.lives = 3;
+        this.DEBUG = true;
+        this.PERFORMANCE_TEST = false;
+        this.players = players;
+        this.players[1].ship.xPos += 300;
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
         this.createAsteroids(Game.randomNumber(10, 20));
-        this.ship = new Ship(this.canvas.width / 2, this.canvas.height / 2, 5, 5, 0, './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png', new KeyboardListener());
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
     loadImage(source) {
@@ -247,7 +319,7 @@ class LevelScreen extends GameScreen {
     drawCurrentScore() {
         const x = 50;
         const y = this.canvas.height - 50;
-        this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
+        this.drawTextToCanvas(`Score: ${this.players[0].currentScore}`, x, y, 40, 'left');
     }
     drawFPS() {
         const t = performance.now();
@@ -257,7 +329,7 @@ class LevelScreen extends GameScreen {
         }
         this.averageFpsList.unshift(fps);
         const averageFPS = (this.averageFpsList.reduce((a, b) => a + b) / this.averageFpsList.length).toFixed(0);
-        this.drawTextToCanvas(String(averageFPS), 300, 200, 25);
+        this.drawTextToCanvas(String(averageFPS), this.canvas.width - 50, 50, 25);
         this.t = t;
         return Number(averageFPS);
     }
@@ -265,24 +337,80 @@ class LevelScreen extends GameScreen {
         for (let i = 0; i < num; i++) {
             const x = Game.randomNumber(0, this.canvas.width);
             const y = Game.randomNumber(0, this.canvas.height);
-            const xVel = Game.randomNumber(1, 3);
-            const yVel = Game.randomNumber(1, 3);
+            const xVel = Game.randomNumber(100, 300) / 100;
+            const yVel = Game.randomNumber(100, 300) / 100;
             const rotation = Game.randomNumber(0, 359);
-            const rotationVelocity = Game.randomNumber(1, 5) / 200;
+            const rotationVelocity = Game.randomNumber(1, 5) / 5;
             const asteroid = new Asteroid(x, y, xVel, yVel, rotation, rotationVelocity);
             this.asteroids.push(asteroid);
         }
     }
     drawLifeImages() {
-        for (let i = 1; i <= this.lives; i++) {
+        for (let i = 1; i <= this.players[0].lives; i++) {
             this.ctx.drawImage(this.lifeImage, this.lifeImage.width * i + 10 * i, 10);
         }
+    }
+    drawAsteroids() {
+        this.asteroids.forEach(asteroid => {
+            asteroid.move(this.canvas);
+            asteroid.draw(this.ctx);
+            if (this.DEBUG) {
+                asteroid.debug(this.ctx);
+            }
+        });
+    }
+    drawPlayers() {
+        this.players.forEach(player => {
+            for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
+                const bullet = player.ship.bullets[i];
+                bullet.move(this.canvas);
+                bullet.draw(this.ctx);
+                if (bullet.isOffScreen) {
+                    player.ship.bullets.splice(i, 1);
+                }
+            }
+            player.ship.move(this.canvas);
+            player.ship.draw(this.ctx);
+            if (this.DEBUG) {
+                player.ship.debug(this.ctx);
+            }
+        });
+    }
+    drawTest() {
+        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+            this.averageAsteroids.push(this.asteroids.length);
+            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+            this.asteroids = [];
+            this.startTime = performance.now();
+        }
+    }
+}
+class Player {
+    constructor(name, score) {
+        this.name = name;
+        this.ship = new Ship(window.innerWidth / 2, window.innerHeight / 2, 5, 5, 0, `./assets/images/SpaceShooterRedux/PNG/playerShip1_${this.randomColour()}.png`, new KeyboardListener());
+        this.lives = 3;
+        this.currentScore = 0;
+        this.scores = [score];
+    }
+    addFinalScore(score) {
+        this.scores.push(score);
+    }
+    die() {
+        this.lives--;
+    }
+    randomColour() {
+        let colour = '';
+        Math.random() < 0.5 ? colour = 'blue' : colour = 'red';
+        return colour;
     }
 }
 class Ship extends GameObject {
     constructor(xPos, yPos, xVel, yVel, rotation, imgUrl, keyboardListener) {
         super(xPos, yPos, xVel, yVel, rotation);
         this.loadImage(imgUrl);
+        this.bullets = [];
         this.keyboardListener = keyboardListener;
     }
     move(canvas) {
@@ -305,7 +433,7 @@ class Ship extends GameObject {
         }
     }
     shoot() {
-        console.log('pew pew');
+        this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 1.5, this.yVel * 1.5, this.rotation, this));
     }
     degreesToRadian(num) {
         return Math.PI / 180 * num;
@@ -346,27 +474,15 @@ class TitleScreen extends GameScreen {
     constructor(canvas, ctx) {
         super(canvas, ctx);
         this.draw = () => {
+            this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
             this.drawHighscores();
         };
         this.score = 0;
         this.highscores = [
-            {
-                playerName: 'Loek',
-                score: 40000
-            },
-            {
-                playerName: 'Daan',
-                score: 34000
-            },
-            {
-                playerName: 'Rimmert',
-                score: 200
-            }
+            new Player('Loek', 40000),
+            new Player('Daan', 34000),
+            new Player('Rimmert', 200)
         ];
-    }
-    titleScreen() {
-        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
-        this.drawHighscores();
     }
     drawHighscores() {
         let longestLine = 0;
@@ -375,7 +491,7 @@ class TitleScreen extends GameScreen {
         this.ctx.font = fontSize + 'px Roboto';
         for (let i = 0; i < this.highscores.length; i++) {
             const player = this.highscores[i];
-            const string = `${i + 1}: ${player.playerName}, score: ${player.score}`;
+            const string = `${i + 1}: ${player.name}, score: ${Math.max(...player.scores)}`;
             const textWidth = this.ctx.measureText(string).width;
             lines.push(string);
             if (textWidth > longestLine) {

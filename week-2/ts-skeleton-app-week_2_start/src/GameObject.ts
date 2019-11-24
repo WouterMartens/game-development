@@ -5,7 +5,7 @@ class GameObject {
     protected _yVel: number;
     protected _rotation: number;
     protected _rotationVel: number;
-    protected img: HTMLImageElement;
+    public img: HTMLImageElement;
 
     constructor(xPos: number, yPos: number, xVel: number, yVel: number, rotation: number) {
         this._xPos = xPos;
@@ -80,6 +80,45 @@ class GameObject {
 
             this.rotation += this.rotationVel;
         }
+    }
+
+    /**
+     * Draws text to the canvas according to the given parameters
+     * @param text String that needs to be shown on the canvas
+     * @param x starting X coordinate of the text
+     * @param y starting Y coordinate of the text
+     * @param fontSize font size of the text in pixels
+     * @param alignment where to start drawing the text (left, center, etc.), standard is center
+     * @param colour Colour of the text, standard is white
+     */
+    public drawTextToCanvas(
+        text: string,
+        x: number,
+        y: number,
+        ctx: CanvasRenderingContext2D,
+        fontSize: number = 10, 
+        alignment: CanvasTextAlign = 'left',
+        colour: string = 'white'
+    ): void {
+        ctx.save();
+
+        ctx.fillStyle = colour;
+        ctx.font = fontSize + 'px Roboto';
+        ctx.textAlign = alignment;
+        ctx.fillText(text, x, y);
+
+        ctx.restore();
+    }
+
+    public debug(ctx: CanvasRenderingContext2D) {
+        const x = this.xPos + this.img.width;
+        let y = this.yPos + this.img.height;
+        const size = 10;
+        this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size)   
     }
     
     public loadImage(source: string) {

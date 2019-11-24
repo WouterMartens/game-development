@@ -1,29 +1,28 @@
 /// <reference path="GameScreen.ts" />
 
 class LevelScreen extends GameScreen {
-    private score: number;
-    private lives: number;
-
     private t: DOMHighResTimeStamp;
     private startTime: DOMHighResTimeStamp;
     private averageFpsList: DOMHighResTimeStamp[];
     private averageAsteroids: number[];
 
     private asteroids: Asteroid[];
-    private ship: Ship;
+    private players: Player[];
 
     private lifeImage: HTMLImageElement;
 
-    private TEST: boolean;
+    private PERFORMANCE_TEST: boolean;
+    private DEBUG: boolean;
 
-    constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+    constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, players: Player[]) {
         super(canvas, ctx);
 
-        this.TEST = false;
+        this.DEBUG = true;
+        this.PERFORMANCE_TEST = false;
 
-        this.score = 400;
-        this.lives = 3;
-
+        this.players = players;
+        this.players[1].ship.xPos += 300;
+        
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
@@ -32,19 +31,7 @@ class LevelScreen extends GameScreen {
         this.asteroids = [];
         this.createAsteroids(Game.randomNumber(10, 20));
 
-        this.ship = new Ship(
-            this.canvas.width / 2,
-            this.canvas.height / 2,
-            5,
-            5,
-            0,
-            './assets/images/SpaceShooterRedux/PNG/playerShip1_blue.png',
-            new KeyboardListener()
-        );
-
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
-
-        // this.loop();
     }
 
     public loadImage(source: string): HTMLImageElement {
@@ -57,7 +44,7 @@ class LevelScreen extends GameScreen {
         const x: number = 50;
         const y: number = this.canvas.height - 50;
 
-        this.drawTextToCanvas(`Score: ${this.score}`, x, y, 40, 'left');
+        this.drawTextToCanvas(`Score: ${this.players[0].currentScore}`, x, y, 40, 'left');
     }
 
     private drawFPS(): number {
@@ -67,12 +54,10 @@ class LevelScreen extends GameScreen {
         if (this.averageFpsList.length > 59) {
             this.averageFpsList.pop();
         }
+
         this.averageFpsList.unshift(fps);
-
         const averageFPS = (this.averageFpsList.reduce((a, b) => a + b) / this.averageFpsList.length).toFixed(0);
-
-        this.drawTextToCanvas(String(averageFPS), 300, 200, 25);
-
+        this.drawTextToCanvas(String(averageFPS), this.canvas.width - 50, 50, 25);
         this.t = t;
 
         return Number(averageFPS);
@@ -87,49 +72,74 @@ class LevelScreen extends GameScreen {
             const x: number = Game.randomNumber(0, this.canvas.width);
             const y: number = Game.randomNumber(0, this.canvas.height);
 
-            const xVel: number = Game.randomNumber(1, 3);
-            const yVel: number = Game.randomNumber(1, 3);
+            const xVel: number = Game.randomNumber(100, 300) / 100;
+            const yVel: number = Game.randomNumber(100, 300) / 100;
 
             const rotation: number = Game.randomNumber(0, 359);
-            const rotationVelocity: number = Game.randomNumber(1, 5) / 200;
+            const rotationVelocity: number = Game.randomNumber(1, 5) / 5;
 
             const asteroid = new Asteroid(x, y, xVel, yVel, rotation, rotationVelocity);
             this.asteroids.push(asteroid);
         }
     }
 
-    private drawLifeImages() {
-        for (let i = 1; i <= this.lives; i++) {
+    private drawLifeImages(): void {
+        for (let i = 1; i <= this.players[0].lives; i++) {
             this.ctx.drawImage(this.lifeImage, this.lifeImage.width * i + 10 * i, 10);
         }
     }
 
-    public draw = () => {
-        if (this.TEST) {
-            this.createAsteroids(1);
-        }
-
+    private drawAsteroids(): void {
         this.asteroids.forEach(asteroid => {
             asteroid.move(this.canvas);
             asteroid.draw(this.ctx);
-        });
 
-        this.ship.move(this.canvas);
-        this.ship.draw(this.ctx);
+            if (this.DEBUG) { asteroid.debug(this.ctx); }
+        });
+    }
+
+    private drawPlayers(): void {
+        this.players.forEach(player => {
+            for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
+                const bullet = player.ship.bullets[i];
+                bullet.move(this.canvas);
+                bullet.draw(this.ctx);
+
+                if (bullet.isOffScreen) {
+                    player.ship.bullets.splice(i, 1);
+                }
+            }
+
+            player.ship.move(this.canvas);
+            player.ship.draw(this.ctx);
+
+            if (this.DEBUG) { player.ship.debug(this.ctx); }
+        });
+    }
+
+    private drawTest(): void {
+        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+            this.averageAsteroids.push(this.asteroids.length);
+
+            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+
+            this.asteroids = [];
+            this.startTime = performance.now();
+        }
+    }
+
+    public draw = () => {
+        if (this.PERFORMANCE_TEST) {
+            this.createAsteroids(1);
+            this.drawTest();
+        }
+        if (this.DEBUG) { this.drawFPS(); }
+
+        this.drawAsteroids();
+        this.drawPlayers();
 
         this.drawCurrentScore();
         this.drawLifeImages();
-
-        if (this.TEST) {
-            if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-                this.averageAsteroids.push(this.asteroids.length);
-
-                console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                    (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
-
-                this.asteroids = [];
-                this.startTime = performance.now();
-            }
-        }
     }
 }

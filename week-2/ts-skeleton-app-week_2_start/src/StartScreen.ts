@@ -43,7 +43,7 @@ class StartScreen extends GameScreen {
     //draw = () => {
     public draw = () => {
         //1. add 'Asteroids' text
-        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center');
+        this.drawTextToCanvas('Asteroids', this.canvas.width / 2, 200, 200, 'center' );
         //2. add 'Press to play' text
         this.drawTextToCanvas('Press start to play', this.canvas.width / 2, 350, 60, 'center');
         //3. add button with 'start' text

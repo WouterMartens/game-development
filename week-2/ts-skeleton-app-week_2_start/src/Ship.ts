@@ -2,6 +2,7 @@
 
 class Ship extends GameObject {
     private keyboardListener: KeyboardListener;
+    public bullets: Bullet[];
 
     constructor(
         xPos: number,
@@ -16,6 +17,7 @@ class Ship extends GameObject {
 
         this.loadImage(imgUrl);
 
+        this.bullets = [];
         this.keyboardListener = keyboardListener;
     }
 
@@ -40,7 +42,7 @@ class Ship extends GameObject {
     }
 
     private shoot() {
-        console.log('pew pew');
+        this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 1.5, this.yVel * 1.5, this.rotation, this));
     }
 
     private degreesToRadian(num: number): number {

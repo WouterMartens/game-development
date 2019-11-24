@@ -6,6 +6,7 @@ class Game {
     private currentScreen: GameScreen;
     private keyboardListener: KeyboardListener;
     private t: DOMHighResTimeStamp;
+    private player: Player;
 
     public constructor(canvasId: HTMLCanvasElement) {
         // Construct all of the canvas
@@ -15,6 +16,9 @@ class Game {
         // Set the context of the canvas
         this.ctx = this.canvas.getContext('2d');
         
+        //this.player = new Player(prompt('Please enter your name', 'Player 1'), 0);
+        this.player = new Player('hi', 1);
+
         this.t = 0;
 
         this.keyboardListener = new KeyboardListener();
@@ -27,7 +31,7 @@ class Game {
 
         if (t - this.t > 1000) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
-                this.currentScreen = new LevelScreen(this.canvas, this.ctx);
+                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
                 this.t = t;
             } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof LevelScreen) {
                 this.currentScreen = new TitleScreen(this.canvas, this.ctx);

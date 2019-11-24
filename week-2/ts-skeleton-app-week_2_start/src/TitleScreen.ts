@@ -1,42 +1,27 @@
 /// <reference path="GameScreen.ts" />
 
-interface Player {
-    playerName: string,
-    score: number
-}
+// interface Player {
+//     playerName: string,
+//     score: number
+// }
 
 class TitleScreen extends GameScreen {
     private readonly player: string;
     private readonly score: number;
     private readonly lives: number;
     private readonly highscores: Array<Player>;
+    private readonly scoreText: GameText;
 
     constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
         super(canvas, ctx);
 
         this.score = 0;
+
         this.highscores = [
-            {
-                playerName: 'Loek',
-                score: 40000
-            },
-            {
-                playerName: 'Daan',
-                score: 34000
-            },
-            {
-                playerName: 'Rimmert',
-                score: 200
-            }
+            new Player('Loek', 40000),
+            new Player('Daan', 34000),
+            new Player('Rimmert', 200)
         ];
-
-    }
-
-    public titleScreen() {
-        //1. draw your score
-        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
-        //2. draw all highscores
-        this.drawHighscores();
     }
 
     drawHighscores() {
@@ -48,7 +33,7 @@ class TitleScreen extends GameScreen {
 
         for (let i = 0; i < this.highscores.length; i++) {
             const player: Player = this.highscores[i];
-            const string: string = `${i + 1}: ${player.playerName}, score: ${player.score}`;
+            const string: string = `${i + 1}: ${player.name}, score: ${Math.max(...player.scores)}`;
             const textWidth: number = this.ctx.measureText(string).width;
 
             lines.push(string);
@@ -59,13 +44,19 @@ class TitleScreen extends GameScreen {
         }
 
         lines.forEach((line, i) => {
-            this.drawTextToCanvas(line, this.canvas.width / 2 - longestLine / 2, this.canvas.height / 3 + 100 + i * fontSize * 1.5, fontSize, 'left');
-            // console.log(line, longestLine);
+            this.drawTextToCanvas(
+                line,
+                this.canvas.width / 2 - longestLine / 2,
+                this.canvas.height / 3 + 100 + i * fontSize * 1.5,
+                fontSize,
+                'left'
+            );
         });
 
     }
 
     public draw = () => {
+        this.drawTextToCanvas(`Score: ${this.score}`, this.canvas.width / 2, 300, 100, 'center');
         this.drawHighscores();
     }
 }
