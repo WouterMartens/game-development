@@ -1,6 +1,6 @@
 /// <reference path="GameObject.ts" />
 
-class Ship extends GameObject {
+class Ship extends GameObject { 
     private keyboardListener: KeyboardListener;
     public bullets: Bullet[];
 
@@ -10,12 +10,11 @@ class Ship extends GameObject {
         xVel: number,
         yVel: number,
         rotation: number,
-        imgUrl: string,
         keyboardListener: KeyboardListener
     ) {
         super(xPos, yPos, xVel, yVel, rotation);
 
-        this.loadImage(imgUrl);
+        this.loadImage(this.randomShip());
 
         this.bullets = [];
         this.keyboardListener = keyboardListener;
@@ -47,5 +46,19 @@ class Ship extends GameObject {
 
     private degreesToRadian(num: number): number {
         return Math.PI / 180 * num;
+    }
+
+    private randomShip() {
+        const string = './assets/images/SpaceShooterRedux/PNG/';
+        const type = Game.randomNumber(1, 4);
+        const colours: string[] = ['blue', 'green', 'red', 'orange'];
+        if (type === 4) { colours[3] = 'yellow'; }
+        const colour = colours[Game.randomNumber(0, 3)];
+        
+        if (type < 4) {
+            return string + `playerShip${type}_${colour}.png`
+        } else {
+            return string + `ufo${colour}.png`
+        }
     }
 }

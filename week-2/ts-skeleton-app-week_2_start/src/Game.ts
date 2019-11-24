@@ -1,7 +1,7 @@
 class Game {
     // Global attributes for canvas
     // Readonly attributes are read-only. They can only be initialized in the constructor
-    private readonly canvas: HTMLCanvasElement; 
+    private readonly canvas: HTMLCanvasElement;
     private readonly ctx: CanvasRenderingContext2D;
     private currentScreen: GameScreen;
     private keyboardListener: KeyboardListener;
@@ -15,7 +15,7 @@ class Game {
         this.canvas.height = window.innerHeight;
         // Set the context of the canvas
         this.ctx = this.canvas.getContext('2d');
-        
+
         //this.player = new Player(prompt('Please enter your name', 'Player 1'), 0);
         this.player = new Player('hi', 1);
 
@@ -29,7 +29,7 @@ class Game {
     private switchScreen() {
         const t = performance.now();
 
-        if (t - this.t > 1000) {
+        if (t - this.t > 300) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
                 this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
                 this.t = t;
@@ -37,8 +37,11 @@ class Game {
                 this.currentScreen = new TitleScreen(this.canvas, this.ctx);
                 this.t = t;
             } else if ((this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) || this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC)) &&
-                        this.currentScreen instanceof TitleScreen) {
+                this.currentScreen instanceof TitleScreen) {
                 this.currentScreen = new StartScreen(this.canvas, this.ctx);
+                this.t = t;
+            } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_P) && this.currentScreen instanceof LevelScreen) {
+                this.currentScreen.toggleDebug();
                 this.t = t;
             }
         }

@@ -7,7 +7,7 @@ class Player {
 
     constructor(name: string, score: number) {
         this.name = name;
-        this.ship = new Ship(window.innerWidth / 2, window.innerHeight / 2, 5, 5, 0, `./assets/images/SpaceShooterRedux/PNG/playerShip1_${this.randomColour()}.png`, new KeyboardListener());
+        this.ship = new Ship(window.innerWidth / 2, window.innerHeight / 2, 5, 5, 0, new KeyboardListener());
         this.lives = 3;
         this.currentScore = 0;
         this.scores = [score];

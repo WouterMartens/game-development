@@ -34,6 +34,10 @@ class LevelScreen extends GameScreen {
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
 
+    public toggleDebug(): void {
+        this.DEBUG = !this.DEBUG;
+    }
+
     public loadImage(source: string): HTMLImageElement {
         const img: HTMLImageElement = new Image();
         img.src = source;

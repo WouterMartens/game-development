@@ -201,7 +201,7 @@ class Game {
     }
     switchScreen() {
         const t = performance.now();
-        if (t - this.t > 1000) {
+        if (t - this.t > 300) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
                 this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
                 this.t = t;
@@ -213,6 +213,10 @@ class Game {
             else if ((this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) || this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC)) &&
                 this.currentScreen instanceof TitleScreen) {
                 this.currentScreen = new StartScreen(this.canvas, this.ctx);
+                this.t = t;
+            }
+            else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_P) && this.currentScreen instanceof LevelScreen) {
+                this.currentScreen.toggleDebug();
                 this.t = t;
             }
         }
@@ -311,6 +315,9 @@ class LevelScreen extends GameScreen {
         this.createAsteroids(Game.randomNumber(10, 20));
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
+    toggleDebug() {
+        this.DEBUG = !this.DEBUG;
+    }
     loadImage(source) {
         const img = new Image();
         img.src = source;
@@ -389,7 +396,7 @@ class LevelScreen extends GameScreen {
 class Player {
     constructor(name, score) {
         this.name = name;
-        this.ship = new Ship(window.innerWidth / 2, window.innerHeight / 2, 5, 5, 0, `./assets/images/SpaceShooterRedux/PNG/playerShip1_${this.randomColour()}.png`, new KeyboardListener());
+        this.ship = new Ship(window.innerWidth / 2, window.innerHeight / 2, 5, 5, 0, new KeyboardListener());
         this.lives = 3;
         this.currentScore = 0;
         this.scores = [score];
@@ -407,9 +414,9 @@ class Player {
     }
 }
 class Ship extends GameObject {
-    constructor(xPos, yPos, xVel, yVel, rotation, imgUrl, keyboardListener) {
+    constructor(xPos, yPos, xVel, yVel, rotation, keyboardListener) {
         super(xPos, yPos, xVel, yVel, rotation);
-        this.loadImage(imgUrl);
+        this.loadImage(this.randomShip());
         this.bullets = [];
         this.keyboardListener = keyboardListener;
     }
@@ -437,6 +444,21 @@ class Ship extends GameObject {
     }
     degreesToRadian(num) {
         return Math.PI / 180 * num;
+    }
+    randomShip() {
+        const string = './assets/images/SpaceShooterRedux/PNG/';
+        const type = Game.randomNumber(1, 4);
+        const colours = ['blue', 'green', 'red', 'orange'];
+        if (type === 4) {
+            colours[3] = 'yellow';
+        }
+        const colour = colours[Game.randomNumber(0, 3)];
+        if (type < 4) {
+            return string + `playerShip${type}_${colour}.png`;
+        }
+        else {
+            return string + `ufo${colour}.png`;
+        }
     }
 }
 class StartScreen extends GameScreen {
