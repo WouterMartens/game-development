@@ -1,14 +1,14 @@
 /**
  * @author Wouter Martens
  */
-class Ball {
-    private x: number;
-    private y: number;
-    private direction: number;
-    private xVel: number;
-    private yVel: number;
-    private radius: number;
-    private colour: string;
+class Shape {
+    protected x: number;
+    protected y: number;
+    protected direction: number;
+    protected xVel: number;
+    protected yVel: number;
+    protected radius: number;
+    protected colour: string;
 
     constructor(
         x: number,
@@ -53,19 +53,5 @@ class Ball {
         this.y -= Math.cos(this.direction) * this.yVel;
     }
 
-    /**
-     * Draws the ball outline on the given x and y coordinates and with the given colour
-     * @param ctx Context to draw with
-     */
-    public draw(ctx: CanvasRenderingContext2D) {
-        ctx.save();
-
-        ctx.beginPath();
-
-        ctx.strokeStyle = this.colour;
-        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        ctx.restore();
-    }
+    public draw(ctx: CanvasRenderingContext2D): void { }
 }

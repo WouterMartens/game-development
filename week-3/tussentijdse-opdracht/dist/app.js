@@ -2,7 +2,7 @@
 /**
  * @author Wouter Martens
  */
-class Ball {
+class Shape {
     constructor(x, y, direction, velocity, radius = 25, colour = 'black') {
         this.x = x;
         this.y = y;
@@ -35,6 +35,13 @@ class Ball {
         this.x += Math.sin(this.direction) * this.xVel;
         this.y -= Math.cos(this.direction) * this.yVel;
     }
+    draw(ctx) { }
+}
+/// <reference path="Shape.ts" />
+class Circle extends Shape {
+    constructor(x, y, direction, velocity, radius = 25, colour = 'black') {
+        super(x, y, direction, velocity, radius, colour);
+    }
     /**
      * Draws the ball outline on the given x and y coordinates and with the given colour
      * @param ctx Context to draw with
@@ -62,9 +69,9 @@ class Game {
             // Clears the canvas
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             // Goes through the ball array and moves, then draws every ball in the array
-            this.balls.forEach(ball => {
-                ball.move(this.canvas);
-                ball.draw(this.ctx);
+            this.shapes.forEach(shape => {
+                shape.move(this.canvas);
+                shape.draw(this.ctx);
             });
             // Loops
             requestAnimationFrame(this.loop);
@@ -73,28 +80,35 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        this.balls = [];
-        this.createBalls(10);
+        this.shapes = [];
+        this.createShapes(10);
         this.loop();
     }
     /**
      * Creates a given number of balls with random properties
      * @param num Amount of balls to create
      */
-    createBalls(num) {
+    createShapes(num) {
         // One loop creates one ball
         for (let i = 0; i < num; i++) {
             // Sets random values for each parameter
+            let shape = null;
+            const circleOrSquare = Math.random();
             const x = this.randomNumber(200, this.canvas.width - 200);
             const y = this.randomNumber(200, this.canvas.height - 200);
             const direction = this.randomNumber(0, 359);
-            const velocity = this.randomNumber(1, 5);
+            const velocity = this.randomNumber(4, 5);
             const radius = this.randomNumber(10, 200);
             const colour = '#' + Math.floor(Math.random() * 16777215).toString(16);
-            // Creates a ball object
-            const ball = new Ball(x, y, direction, velocity, radius, colour);
+            // Creates a shape object
+            if (circleOrSquare < 0.5) {
+                shape = new Circle(x, y, direction, velocity, radius, colour);
+            }
+            else {
+                shape = new Square(x, y, direction, velocity, radius, colour);
+            }
             // Pushes the ball object to the balls array (then repeats the process)
-            this.balls.push(ball);
+            this.shapes.push(shape);
         }
     }
     /**
@@ -117,5 +131,24 @@ function init() {
     if (body) {
         body.appendChild(canvas);
         const game = new Game(canvas);
+    }
+}
+/// <reference path="Shape.ts" />
+class Square extends Shape {
+    constructor(x, y, direction, velocity, radius = 25, colour = 'black') {
+        super(x, y, direction, velocity, radius, colour);
+        this.size = radius * 2;
+    }
+    /**
+     * Draws the ball outline on the given x and y coordinates and with the given colour
+     * @param ctx Context to draw with
+     */
+    draw(ctx) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = this.colour;
+        ctx.strokeRect(this.x - this.radius, this.y - this.radius, this.size, this.size);
+        ctx.stroke();
+        ctx.restore();
     }
 }

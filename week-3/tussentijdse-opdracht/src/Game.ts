@@ -4,7 +4,7 @@
 class Game {
     private readonly canvas: HTMLCanvasElement;
     private readonly ctx: CanvasRenderingContext2D;
-    private readonly balls: Ball[]; 
+    private readonly shapes: Shape[]; 
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -13,8 +13,8 @@ class Game {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
 
-        this.balls = [];
-        this.createBalls(10);
+        this.shapes = [];
+        this.createShapes(10);
 
         this.loop();
     }
@@ -23,22 +23,29 @@ class Game {
      * Creates a given number of balls with random properties
      * @param num Amount of balls to create
      */
-    private createBalls(num: number) {
+    private createShapes(num: number) {
         // One loop creates one ball
         for (let i = 0; i < num; i++) {
             // Sets random values for each parameter
+            let shape: Shape | null = null;
+            const circleOrSquare = Math.random();
+
             const x: number = this.randomNumber(200, this.canvas.width - 200);
             const y: number = this.randomNumber(200, this.canvas.height - 200);
             const direction: number = this.randomNumber(0, 359);
-            const velocity: number = this.randomNumber(1, 5);
+            const velocity: number = this.randomNumber(4, 5);
             const radius: number = this.randomNumber(10, 200);
             const colour: string = '#' + Math.floor(Math.random()*16777215).toString(16);
 
-            // Creates a ball object
-            const ball: Ball = new Ball(x, y, direction, velocity, radius, colour);
+            // Creates a shape object
+            if (circleOrSquare < 0.5) {
+                shape = new Circle(x, y, direction, velocity, radius, colour);
+            } else {
+                shape = new Square(x, y, direction, velocity, radius, colour);
+            }
 
             // Pushes the ball object to the balls array (then repeats the process)
-            this.balls.push(ball);
+            this.shapes.push(shape);
         }
     }
 
@@ -52,9 +59,9 @@ class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Goes through the ball array and moves, then draws every ball in the array
-        this.balls.forEach(ball => {
-            ball.move(this.canvas);
-            ball.draw(this.ctx);
+        this.shapes.forEach(shape => {
+            shape.move(this.canvas);
+            shape.draw(this.ctx);
         });
 
         // Loops
