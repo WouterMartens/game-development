@@ -6,6 +6,7 @@ class LevelScreen extends GameScreen {
     private averageFpsList: DOMHighResTimeStamp[];
     private averageAsteroids: number[];
 
+    private staticAsteroid: Asteroid;
     private asteroids: Asteroid[];
     private players: Player[];
 
@@ -31,6 +32,9 @@ class LevelScreen extends GameScreen {
         this.averageAsteroids = [];
 
         this.asteroids = [];
+        this.staticAsteroid = new Asteroid(500, 500, 0, 0, 0);
+        this.asteroids.push(this.staticAsteroid);
+ 
         // this.createAsteroids(Game.randomNumber(10, 20));
         this.createAsteroids(5);
 
@@ -96,101 +100,88 @@ class LevelScreen extends GameScreen {
         }
     }
 
-    private move() {
+    public move() {
         this.asteroids.forEach(asteroid => {
             asteroid.move(this.canvas);
         });
 
         this.players.forEach(player => {
             player.ship.move(this.canvas);
-        });
-    }
 
-    private drawEverything() {
-        this.asteroids.forEach(asteroid => {
-            asteroid.draw(this.ctx);
-        });
-
-        this.players.forEach(player => {
-            player.ship.draw(this.ctx);
-        });
-    }
-
-    private collide() {
-        this.players.forEach(player => {
-            for (let i = 0; i < this.asteroids.length; i++) {
-                const asteroid = this.asteroids[i];
-                // if (player.ship.isHit()) {
-
-                // }
-            }
-        });
-    }
-
-    private drawAsteroids(): void {
-        this.asteroids.forEach(asteroid1 => {
-            asteroid1.move(this.canvas);
-            asteroid1.draw(this.ctx);
-
-            // for (let i = 0; i < this.asteroids.length; i++) {
-            //     const asteroid2 = this.asteroids[i];
-            //     asteroid1.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, asteroid2.xPos, asteroid2.yPos, asteroid2.radius, this.ctx);
-            // }
-            const ship = this.players[0].ship;
-            if (ship.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, ship.xPos, ship.yPos, ship.radius, this.ctx)) {
-                console.log('fuk');
-                ship.state = 'fuck';
-            }
-
-            if (this.DEBUG) { asteroid1.debug(this.ctx); }
-        });
-    }
-
-    private drawPlayers(): void {
-        this.players.forEach(player => {
             for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
                 const bullet = player.ship.bullets[i];
                 bullet.move(this.canvas);
-                bullet.draw(this.ctx);
-
                 if (bullet.isOffScreen) {
                     player.ship.bullets.splice(i, 1);
                 }
             }
+        });
+    }
 
-            player.ship.move(this.canvas);
-            player.ship.draw(this.ctx);
+    public collide() {
+        // Checks collisions for each player and their fired bullets
+        this.players.forEach(player => {
+            const x = player.ship.xPos;
+            const y = player.ship.yPos;
+            const r = player.ship.radius;
 
-            if (this.DEBUG) { 
-                player.ship.debug(this.ctx);
-                // console.log(player.ship.bullets);
+            // Loops all asteroids
+            for (let i = 0; i < this.asteroids.length; i++) {
+                const asteroid = this.asteroids[i];
+                const aX = asteroid.xPos;
+                const aY = asteroid.yPos;
+                const aR = asteroid.radius;
+
+                // Checks if a bullet hit this asteroid
+                for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
+                    const bullet = player.ship.bullets[i];
+                    if(bullet.hit(aX, aY, aR)) {
+                        player.ship.bullets.splice(i, 1);
+                        asteroid.state = 'hit';
+                    }
+                }
+
+                if (player.ship.isHit(x, y, r, aX, aY, aR, this.ctx)) {
+                    break;
+                }
             }
         });
     }
 
-    private drawTest(): void {
-        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-            this.averageAsteroids.push(this.asteroids.length);
-
-            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
-
-            this.asteroids = [];
-            this.startTime = performance.now();
-        }
-    }
-
-    public draw = () => {
-        if (this.PERFORMANCE_TEST) {
-            this.createAsteroids(1);
-            this.drawTest();
-        }
+    public draw() {
         if (this.DEBUG) { this.drawFPS(); }
 
-        this.drawAsteroids();
-        this.drawPlayers();
+        this.asteroids.forEach(asteroid => {
+            asteroid.draw(this.ctx);
+            if (this.DEBUG) { asteroid.debug(this.ctx); }
+        });
+
+        this.players.forEach(player => {
+            player.ship.draw(this.ctx);
+            player.ship.bullets.forEach(bullet => {
+                bullet.draw(this.ctx);
+            });
+            if (this.DEBUG) { player.ship.debug(this.ctx); }
+        });
 
         this.drawCurrentScore();
         this.drawLifeImages();
+
+        // if (this.PERFORMANCE_TEST) {
+        //     this.createAsteroids(1);
+        //     this.drawTest();
+        // }
     }
+
+    // private drawTest(): void {
+    //     if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
+    //         this.averageAsteroids.push(this.asteroids.length);
+
+    //         console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
+    //             (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
+
+    //         this.asteroids = [];
+    //         this.startTime = performance.now();
+    //     }
+    // }
 }

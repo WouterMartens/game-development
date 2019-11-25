@@ -48,11 +48,16 @@ class Game {
     }
 
     public loop = () => {
+        const time = performance.now();
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.switchScreen();
-        this.currentScreen.draw(); // polymorphisme 
+        this.currentScreen.move();
+        this.currentScreen.draw();
+        this.currentScreen.collide();
 
+        // console.log(performance.now() - time);
         requestAnimationFrame(this.loop);
     }
 

@@ -7,7 +7,9 @@ class GameScreen {
         this.ctx = ctx;
     }
 
+    public move(): void { }
     public draw(): void { }
+    public collide(): void { }
 
     /**
      * Draws text to the canvas according to the given parameters

@@ -1,10 +1,16 @@
 /// <reference path="GameObject.ts" />
 
+interface Point {
+    x: number;
+    y: number;
+}
+
 class Bullet extends GameObject {
     private width: number;
     private height: number;
     // private radius: number;
     private ship: Ship;
+    public point: Point;
     public isOffScreen: boolean;
 
     constructor(xPos: number, yPos: number, xVel: number, yVel: number, rotation: number, ship: Ship) {
@@ -16,7 +22,12 @@ class Bullet extends GameObject {
         this.xVel = xVel;
         this.yVel = yVel;
         this.width = 3;
-        this.height = 10;
+        this.height = 30;
+
+        this.point = {
+            x: xPos,
+            y: yPos
+        }
 
         this.isOffScreen = false;
         this.ship = ship;
@@ -57,11 +68,29 @@ class Bullet extends GameObject {
 
         ctx.translate(this.xPos, this.yPos);
         ctx.rotate(this.rotation);
-        ctx.translate(-(this.xPos + 0.5 * this.ship.img.width), -(this.yPos + 0.5 * this.ship.img.height));
+        ctx.translate(-(this.xPos), -(this.yPos));
+
+        this.point.x = this.xPos - this.width / 2;
+        this.point.y = this.yPos - this.ship.img.height / 2;
 
         ctx.fillStyle = 'white';
-        ctx.fillRect(this.xPos + this.ship.img.width / 2 - this.width / 2, this.yPos, this.width, this.height);
+        ctx.fillRect(this.xPos - this.width / 2, this.yPos - this.ship.img.height / 2, this.width, this.height);
+
+        // debug
+        // ctx.fillStyle = 'red';
+        // ctx.fillRect(this.xPos - 2, this.yPos - this.ship.img.height / 2, 4, 4);
 
         ctx.restore();
+    }
+
+    public hit(cx: number, cy: number, radius: number): boolean {
+        const distX: number = this.xPos - cx;
+        const distY: number = this.yPos - cy;
+        const distance: number = Math.sqrt((distX*distX) + (distY*distY));
+
+        if (distance <= radius) {
+            return true;
+        }
+        return false;
     }
 }

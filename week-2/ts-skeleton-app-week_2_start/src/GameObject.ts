@@ -8,7 +8,6 @@ class GameObject {
     public state: string;
     public img: HTMLImageElement; 
     public radius: number;
-    private wasHit: boolean;
 
     constructor(xPos: number, yPos: number, xVel: number, yVel: number, rotation: number) {
         this._xPos = xPos;
@@ -22,7 +21,6 @@ class GameObject {
 
         this.state = 'spawning';
         this.radius = 0;
-        this.wasHit = false;
     }
 
     get xPos(): number {
@@ -76,11 +74,25 @@ class GameObject {
     public isHit(c1x: number, c1y: number, c1r: number, c2x: number, c2y: number, c2r: number, ctx: CanvasRenderingContext2D): boolean {
         const distX: number = c1x - c2x;
         const distY: number = c1y - c2y;
-        const distance = Math.sqrt((distX * distY) + (distY*distY));
+        const distance: any = Math.sqrt((distX * distX) + (distY*distY));
 
         if (distance <= c1r + c2r) {
+            ctx.save();
+
+            ctx.strokeStyle = 'red';
+
+            ctx.beginPath();
+            ctx.arc(c1x, c1y, c1r, 0, Math.PI * 2);
+            ctx.beginPath();
+            ctx.arc(c2x, c2y, c2r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+
+            this.state = 'hit';
             return true;
         }
+        this.state = 'flying';
         return false;
     }
 
@@ -140,19 +152,23 @@ class GameObject {
 
         ctx.save();
 
+        // Position
         this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
         y += size + 2;
+        // Velocity
         this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
         y += size + 2;
+        // Rotation
         this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
         y += size + 2;
+        // State
         this.drawTextToCanvas(`${this.state}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.wasHit}`, x, y, ctx, size);
         
+        // Center point
         ctx.fillStyle = 'red';
         ctx.fillRect(this.xPos - 2, this.yPos - 2, 4, 4);
 
+        // Bounding body circle
         ctx.beginPath();
         ctx.strokeStyle = 'white';
         ctx.arc(this.xPos, this.yPos, center, 0, 2 * Math.PI);

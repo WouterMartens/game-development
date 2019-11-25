@@ -8,7 +8,6 @@ class GameObject {
         this._rotationVel = 0;
         this.state = 'spawning';
         this.radius = 0;
-        this.wasHit = false;
     }
     get xPos() {
         return this._xPos;
@@ -49,10 +48,20 @@ class GameObject {
     isHit(c1x, c1y, c1r, c2x, c2y, c2r, ctx) {
         const distX = c1x - c2x;
         const distY = c1y - c2y;
-        const distance = Math.sqrt((distX * distY) + (distY * distY));
+        const distance = Math.sqrt((distX * distX) + (distY * distY));
         if (distance <= c1r + c2r) {
+            ctx.save();
+            ctx.strokeStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(c1x, c1y, c1r, 0, Math.PI * 2);
+            ctx.beginPath();
+            ctx.arc(c2x, c2y, c2r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+            this.state = 'hit';
             return true;
         }
+        this.state = 'flying';
         return false;
     }
     draw(ctx) {
@@ -90,8 +99,6 @@ class GameObject {
         this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
         y += size + 2;
         this.drawTextToCanvas(`${this.state}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.wasHit}`, x, y, ctx, size);
         ctx.fillStyle = 'red';
         ctx.fillRect(this.xPos - 2, this.yPos - 2, 4, 4);
         ctx.beginPath();
@@ -176,7 +183,11 @@ class Bullet extends GameObject {
         this.xVel = xVel;
         this.yVel = yVel;
         this.width = 3;
-        this.height = 10;
+        this.height = 30;
+        this.point = {
+            x: xPos,
+            y: yPos
+        };
         this.isOffScreen = false;
         this.ship = ship;
     }
@@ -196,18 +207,32 @@ class Bullet extends GameObject {
         ctx.save();
         ctx.translate(this.xPos, this.yPos);
         ctx.rotate(this.rotation);
-        ctx.translate(-(this.xPos + 0.5 * this.ship.img.width), -(this.yPos + 0.5 * this.ship.img.height));
+        ctx.translate(-(this.xPos), -(this.yPos));
+        this.point.x = this.xPos - this.width / 2;
+        this.point.y = this.yPos - this.ship.img.height / 2;
         ctx.fillStyle = 'white';
-        ctx.fillRect(this.xPos + this.ship.img.width / 2 - this.width / 2, this.yPos, this.width, this.height);
+        ctx.fillRect(this.xPos - this.width / 2, this.yPos - this.ship.img.height / 2, this.width, this.height);
         ctx.restore();
+    }
+    hit(cx, cy, radius) {
+        const distX = this.xPos - cx;
+        const distY = this.yPos - cy;
+        const distance = Math.sqrt((distX * distX) + (distY * distY));
+        if (distance <= radius) {
+            return true;
+        }
+        return false;
     }
 }
 class Game {
     constructor(canvasId) {
         this.loop = () => {
+            const time = performance.now();
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.switchScreen();
+            this.currentScreen.move();
             this.currentScreen.draw();
+            this.currentScreen.collide();
             requestAnimationFrame(this.loop);
         };
         this.canvas = canvasId;
@@ -255,7 +280,9 @@ class GameScreen {
         this.canvas = canvas;
         this.ctx = ctx;
     }
+    move() { }
     draw() { }
+    collide() { }
     drawTextToCanvas(text, x, y, fontSize, alignment = 'center', colour = 'white') {
         this.ctx.save();
         this.ctx.fillStyle = colour;
@@ -311,19 +338,6 @@ KeyboardListener.KEY_P = 80;
 class LevelScreen extends GameScreen {
     constructor(canvas, ctx, players) {
         super(canvas, ctx);
-        this.draw = () => {
-            if (this.PERFORMANCE_TEST) {
-                this.createAsteroids(1);
-                this.drawTest();
-            }
-            if (this.DEBUG) {
-                this.drawFPS();
-            }
-            this.drawAsteroids();
-            this.drawPlayers();
-            this.drawCurrentScore();
-            this.drawLifeImages();
-        };
         this.DEBUG = true;
         this.PERFORMANCE_TEST = false;
         this.players = players;
@@ -335,6 +349,8 @@ class LevelScreen extends GameScreen {
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
+        this.staticAsteroid = new Asteroid(500, 500, 0, 0, 0);
+        this.asteroids.push(this.staticAsteroid);
         this.createAsteroids(5);
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
@@ -386,62 +402,59 @@ class LevelScreen extends GameScreen {
         });
         this.players.forEach(player => {
             player.ship.move(this.canvas);
-        });
-    }
-    drawEverything() {
-        this.asteroids.forEach(asteroid => {
-            asteroid.draw(this.ctx);
-        });
-        this.players.forEach(player => {
-            player.ship.draw(this.ctx);
-        });
-    }
-    collide() {
-        this.players.forEach(player => {
-            for (let i = 0; i < this.asteroids.length; i++) {
-                const asteroid = this.asteroids[i];
-            }
-        });
-    }
-    drawAsteroids() {
-        this.asteroids.forEach(asteroid1 => {
-            asteroid1.move(this.canvas);
-            asteroid1.draw(this.ctx);
-            const ship = this.players[0].ship;
-            if (ship.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, ship.xPos, ship.yPos, ship.radius, this.ctx)) {
-                console.log('fuk');
-                ship.state = 'fuck';
-            }
-            if (this.DEBUG) {
-                asteroid1.debug(this.ctx);
-            }
-        });
-    }
-    drawPlayers() {
-        this.players.forEach(player => {
             for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
                 const bullet = player.ship.bullets[i];
                 bullet.move(this.canvas);
-                bullet.draw(this.ctx);
                 if (bullet.isOffScreen) {
                     player.ship.bullets.splice(i, 1);
                 }
             }
-            player.ship.move(this.canvas);
+        });
+    }
+    collide() {
+        this.players.forEach(player => {
+            const x = player.ship.xPos;
+            const y = player.ship.yPos;
+            const r = player.ship.radius;
+            for (let i = 0; i < this.asteroids.length; i++) {
+                const asteroid = this.asteroids[i];
+                const aX = asteroid.xPos;
+                const aY = asteroid.yPos;
+                const aR = asteroid.radius;
+                for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
+                    const bullet = player.ship.bullets[i];
+                    if (bullet.hit(aX, aY, aR)) {
+                        player.ship.bullets.splice(i, 1);
+                        asteroid.state = 'hit';
+                    }
+                }
+                if (player.ship.isHit(x, y, r, aX, aY, aR, this.ctx)) {
+                    break;
+                }
+            }
+        });
+    }
+    draw() {
+        if (this.DEBUG) {
+            this.drawFPS();
+        }
+        this.asteroids.forEach(asteroid => {
+            asteroid.draw(this.ctx);
+            if (this.DEBUG) {
+                asteroid.debug(this.ctx);
+            }
+        });
+        this.players.forEach(player => {
             player.ship.draw(this.ctx);
+            player.ship.bullets.forEach(bullet => {
+                bullet.draw(this.ctx);
+            });
             if (this.DEBUG) {
                 player.ship.debug(this.ctx);
             }
         });
-    }
-    drawTest() {
-        if (!(this.drawFPS() > 50 || performance.now() - this.startTime < 1000)) {
-            this.averageAsteroids.push(this.asteroids.length);
-            console.log('Lost performance at ' + this.asteroids.length + ' asteroids, average: ' +
-                (this.averageAsteroids.reduce((a, b) => a + b) / this.averageAsteroids.length).toFixed(0));
-            this.asteroids = [];
-            this.startTime = performance.now();
-        }
+        this.drawCurrentScore();
+        this.drawLifeImages();
     }
 }
 class Player {
@@ -470,6 +483,15 @@ class Ship extends GameObject {
         this.loadImage(this.randomShip());
         this.bullets = [];
         this.keyboardListener = keyboardListener;
+        this.rpm = 600;
+        this.lastShot = null;
+        this.thrusting = false;
+        this.thrust = {
+            x: 0,
+            y: 0
+        };
+        this.friction = 0.7;
+        this.fps = 60;
     }
     move(canvas) {
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_RIGHT)) {
@@ -482,16 +504,16 @@ class Ship extends GameObject {
             this.xPos += Math.sin(this.rotation) * this.xVel;
             this.yPos -= Math.cos(this.rotation) * this.yVel;
         }
-        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
-            this.xPos -= Math.sin(this.rotation) * this.xVel;
-            this.yPos += Math.cos(this.rotation) * this.yVel;
-        }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_SPACE)) {
             this.shoot();
         }
     }
     shoot() {
-        this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 1.5, this.yVel * 1.5, this.rotation, this));
+        const t = performance.now();
+        if (t - this.lastShot >= 1000 / (this.rpm / 60)) {
+            this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 3, this.yVel * 3, this.rotation, this));
+            this.lastShot = performance.now();
+        }
     }
     degreesToRadian(num) {
         return Math.PI / 180 * num;

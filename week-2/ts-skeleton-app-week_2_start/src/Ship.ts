@@ -1,8 +1,22 @@
 /// <reference path="GameObject.ts" />
 
-class Ship extends GameObject { 
+interface Thrust {
+    x: number;
+    y: number;
+}
+
+class Ship extends GameObject {
     private keyboardListener: KeyboardListener;
     public bullets: Bullet[];
+
+    private lastShot: DOMHighResTimeStamp;
+    private rpm: number;
+
+    private thrusting: boolean;
+    private thrust: Thrust;
+    private friction: number;
+    private rot: number;
+    private fps: number;
 
     constructor(
         xPos: number,
@@ -18,6 +32,17 @@ class Ship extends GameObject {
 
         this.bullets = [];
         this.keyboardListener = keyboardListener;
+
+        this.rpm = 600;
+        this.lastShot = null;
+
+        this.thrusting = false;
+        this.thrust = {
+            x: 0,
+            y: 0
+        }
+        this.friction = 0.7;
+        this.fps = 60;
     }
 
     public move(canvas: HTMLCanvasElement) {
@@ -30,18 +55,22 @@ class Ship extends GameObject {
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_UP)) {
             this.xPos += Math.sin(this.rotation) * this.xVel;
             this.yPos -= Math.cos(this.rotation) * this.yVel;
-        }
-        if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
-            this.xPos -= Math.sin(this.rotation) * this.xVel;
-            this.yPos += Math.cos(this.rotation) * this.yVel;
-        }
+        } 
+        // if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_DOWN)) {
+        //     this.xPos -= Math.sin(this.rotation) * this.xVel;
+        //     this.yPos += Math.cos(this.rotation) * this.yVel;
+        // }
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_SPACE)) {
             this.shoot();
         }
     }
 
     private shoot() {
-        this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 1.5, this.yVel * 1.5, this.rotation, this));
+        const t = performance.now();
+        if (t - this.lastShot >= 1000 / (this.rpm / 60)) {
+            this.bullets.push(new Bullet(this.xPos, this.yPos, this.xVel * 3, this.yVel * 3, this.rotation, this));
+            this.lastShot = performance.now();
+        }
     }
 
     private degreesToRadian(num: number): number {
@@ -54,7 +83,7 @@ class Ship extends GameObject {
         const colours: string[] = ['blue', 'green', 'red', 'orange'];
         if (type === 4) { colours[3] = 'yellow'; }
         const colour = colours[Game.randomNumber(0, 3)];
-        
+
         if (type < 4) {
             return string + `playerShip${type}_${colour}.png`
         } else {
