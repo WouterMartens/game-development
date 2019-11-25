@@ -14,16 +14,21 @@ class Asteroid extends GameObject {
         this.rotationVel = Math.PI / 180 * rotationVel;
 
         this.loadImage(this.getRandomAsteroid());
+
+        this.state = 'flying';
     }
 
     public move(canvas: HTMLCanvasElement) {
-        if ((this.xPos >= canvas.width - this.img.width && this.xVel > 0 ) ||
-            (this.xPos <= 0 && this.xVel < 0)) {
+        const width: number = this.img.width / 2;
+        const height: number = this.img.height / 2;
+
+        if ((this.xPos >= canvas.width - width && this.xVel > 0 ) ||
+            (this.xPos <= 0 + width && this.xVel / 2 < 0)) {
             this.xVel *= -1;
         }
 
-        if ((this.yPos >= canvas.height - this.img.height && this.yVel > 0) || 
-            (this.yPos <= 0 && this.yVel < 0)) {
+        if ((this.yPos >= canvas.height - height && this.yVel > 0) || 
+            (this.yPos <= 0 + height && this.yVel < 0)) {
             this.yVel *= -1;
         }
 
@@ -64,6 +69,4 @@ class Asteroid extends GameObject {
 
         return `./assets/images/SpaceShooterRedux/PNG/Meteors/meteor${colour}_${size}${number}.png`;
     }
-
-    // public collided(xMin: number, yMin: number, xMax: number, yMax: number) { }
 }

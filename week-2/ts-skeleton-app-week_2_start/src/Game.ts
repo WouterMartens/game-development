@@ -31,7 +31,7 @@ class Game {
 
         if (t - this.t > 300) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
-                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
+                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player]);
                 this.t = t;
             } else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof LevelScreen) {
                 this.currentScreen = new TitleScreen(this.canvas, this.ctx);

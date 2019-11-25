@@ -21,7 +21,9 @@ class LevelScreen extends GameScreen {
         this.PERFORMANCE_TEST = false;
 
         this.players = players;
-        this.players[1].ship.xPos += 300;
+        if (this.players.length > 1) {
+            this.players[1].ship.xPos += 300;
+        }
         
         this.t = performance.now();
         this.startTime = this.t;
@@ -29,7 +31,8 @@ class LevelScreen extends GameScreen {
         this.averageAsteroids = [];
 
         this.asteroids = [];
-        this.createAsteroids(Game.randomNumber(10, 20));
+        // this.createAsteroids(Game.randomNumber(10, 20));
+        this.createAsteroids(5);
 
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
@@ -93,12 +96,53 @@ class LevelScreen extends GameScreen {
         }
     }
 
-    private drawAsteroids(): void {
+    private move() {
         this.asteroids.forEach(asteroid => {
             asteroid.move(this.canvas);
-            asteroid.draw(this.ctx);
+        });
 
-            if (this.DEBUG) { asteroid.debug(this.ctx); }
+        this.players.forEach(player => {
+            player.ship.move(this.canvas);
+        });
+    }
+
+    private drawEverything() {
+        this.asteroids.forEach(asteroid => {
+            asteroid.draw(this.ctx);
+        });
+
+        this.players.forEach(player => {
+            player.ship.draw(this.ctx);
+        });
+    }
+
+    private collide() {
+        this.players.forEach(player => {
+            for (let i = 0; i < this.asteroids.length; i++) {
+                const asteroid = this.asteroids[i];
+                // if (player.ship.isHit()) {
+
+                // }
+            }
+        });
+    }
+
+    private drawAsteroids(): void {
+        this.asteroids.forEach(asteroid1 => {
+            asteroid1.move(this.canvas);
+            asteroid1.draw(this.ctx);
+
+            // for (let i = 0; i < this.asteroids.length; i++) {
+            //     const asteroid2 = this.asteroids[i];
+            //     asteroid1.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, asteroid2.xPos, asteroid2.yPos, asteroid2.radius, this.ctx);
+            // }
+            const ship = this.players[0].ship;
+            if (ship.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, ship.xPos, ship.yPos, ship.radius, this.ctx)) {
+                console.log('fuk');
+                ship.state = 'fuck';
+            }
+
+            if (this.DEBUG) { asteroid1.debug(this.ctx); }
         });
     }
 
@@ -117,7 +161,10 @@ class LevelScreen extends GameScreen {
             player.ship.move(this.canvas);
             player.ship.draw(this.ctx);
 
-            if (this.DEBUG) { player.ship.debug(this.ctx); }
+            if (this.DEBUG) { 
+                player.ship.debug(this.ctx);
+                // console.log(player.ship.bullets);
+            }
         });
     }
 

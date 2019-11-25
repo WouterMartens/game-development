@@ -3,7 +3,7 @@
 class Bullet extends GameObject {
     private width: number;
     private height: number;
-    private radius: number;
+    // private radius: number;
     private ship: Ship;
     public isOffScreen: boolean;
 
@@ -55,7 +55,7 @@ class Bullet extends GameObject {
     public draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
 
-        ctx.translate(this.xPos + 0.5 * this.ship.img.width, this.yPos + 0.5 * this.ship.img.height);
+        ctx.translate(this.xPos, this.yPos);
         ctx.rotate(this.rotation);
         ctx.translate(-(this.xPos + 0.5 * this.ship.img.width), -(this.yPos + 0.5 * this.ship.img.height));
 
@@ -63,16 +63,5 @@ class Bullet extends GameObject {
         ctx.fillRect(this.xPos + this.ship.img.width / 2 - this.width / 2, this.yPos, this.width, this.height);
 
         ctx.restore();
-    }
-
-    public debug(ctx: CanvasRenderingContext2D) {
-        const x = this.xPos + this.width + 10;
-        let y = this.yPos + this.height + 10;
-        const size = 10;
-        this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size)   
     }
 }

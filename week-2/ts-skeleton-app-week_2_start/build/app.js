@@ -6,6 +6,9 @@ class GameObject {
         this._yVel = yVel;
         this._rotation = Math.PI / 180 * rotation;
         this._rotationVel = 0;
+        this.state = 'spawning';
+        this.radius = 0;
+        this.wasHit = false;
     }
     get xPos() {
         return this._xPos;
@@ -43,13 +46,25 @@ class GameObject {
     set rotationVel(value) {
         this._rotationVel = value;
     }
+    isHit(c1x, c1y, c1r, c2x, c2y, c2r, ctx) {
+        const distX = c1x - c2x;
+        const distY = c1y - c2y;
+        const distance = Math.sqrt((distX * distY) + (distY * distY));
+        if (distance <= c1r + c2r) {
+            return true;
+        }
+        return false;
+    }
     draw(ctx) {
         if (this.img.naturalWidth > 0) {
+            if (this.radius === 0) {
+                this.radius = (this.img.naturalWidth + this.img.naturalHeight) / 4;
+            }
             ctx.save();
-            ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
+            ctx.translate(this.xPos, this.yPos);
             ctx.rotate(this.rotation);
-            ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
-            ctx.drawImage(this.img, this.xPos, this.yPos);
+            ctx.translate(-this.xPos, -this.yPos);
+            ctx.drawImage(this.img, this.xPos - this.img.width / 2, this.yPos - this.img.height / 2);
             ctx.restore();
             this.rotation += this.rotationVel;
         }
@@ -63,14 +78,27 @@ class GameObject {
         ctx.restore();
     }
     debug(ctx) {
-        const x = this.xPos + this.img.width;
-        let y = this.yPos + this.img.height;
+        const x = this.xPos + this.img.width / 2;
+        let y = this.yPos + this.img.height / 2;
         const size = 10;
+        const center = (this.img.naturalWidth + this.img.naturalHeight) / 4;
+        ctx.save();
         this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
         y += size + 2;
         this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
         y += size + 2;
         this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.state}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.wasHit}`, x, y, ctx, size);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.xPos - 2, this.yPos - 2, 4, 4);
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.arc(this.xPos, this.yPos, center, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.restore();
     }
     loadImage(source) {
         this.img = new Image();
@@ -94,14 +122,17 @@ class Asteroid extends GameObject {
         }
         this.rotationVel = Math.PI / 180 * rotationVel;
         this.loadImage(this.getRandomAsteroid());
+        this.state = 'flying';
     }
     move(canvas) {
-        if ((this.xPos >= canvas.width - this.img.width && this.xVel > 0) ||
-            (this.xPos <= 0 && this.xVel < 0)) {
+        const width = this.img.width / 2;
+        const height = this.img.height / 2;
+        if ((this.xPos >= canvas.width - width && this.xVel > 0) ||
+            (this.xPos <= 0 + width && this.xVel / 2 < 0)) {
             this.xVel *= -1;
         }
-        if ((this.yPos >= canvas.height - this.img.height && this.yVel > 0) ||
-            (this.yPos <= 0 && this.yVel < 0)) {
+        if ((this.yPos >= canvas.height - height && this.yVel > 0) ||
+            (this.yPos <= 0 + height && this.yVel < 0)) {
             this.yVel *= -1;
         }
         this.xPos += this.xVel;
@@ -163,22 +194,12 @@ class Bullet extends GameObject {
     }
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.xPos + 0.5 * this.ship.img.width, this.yPos + 0.5 * this.ship.img.height);
+        ctx.translate(this.xPos, this.yPos);
         ctx.rotate(this.rotation);
         ctx.translate(-(this.xPos + 0.5 * this.ship.img.width), -(this.yPos + 0.5 * this.ship.img.height));
         ctx.fillStyle = 'white';
         ctx.fillRect(this.xPos + this.ship.img.width / 2 - this.width / 2, this.yPos, this.width, this.height);
         ctx.restore();
-    }
-    debug(ctx) {
-        const x = this.xPos + this.width + 10;
-        let y = this.yPos + this.height + 10;
-        const size = 10;
-        this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
-        y += size + 2;
-        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
     }
 }
 class Game {
@@ -203,7 +224,7 @@ class Game {
         const t = performance.now();
         if (t - this.t > 300) {
             if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_S) && this.currentScreen instanceof StartScreen) {
-                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player, new Player('hi2', 500)]);
+                this.currentScreen = new LevelScreen(this.canvas, this.ctx, [this.player]);
                 this.t = t;
             }
             else if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_ESC) && this.currentScreen instanceof LevelScreen) {
@@ -306,13 +327,15 @@ class LevelScreen extends GameScreen {
         this.DEBUG = true;
         this.PERFORMANCE_TEST = false;
         this.players = players;
-        this.players[1].ship.xPos += 300;
+        if (this.players.length > 1) {
+            this.players[1].ship.xPos += 300;
+        }
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
         this.averageAsteroids = [];
         this.asteroids = [];
-        this.createAsteroids(Game.randomNumber(10, 20));
+        this.createAsteroids(5);
         this.lifeImage = this.loadImage('./assets/images/SpaceShooterRedux/PNG/UI/playerLife1_blue.png');
     }
     toggleDebug() {
@@ -357,12 +380,40 @@ class LevelScreen extends GameScreen {
             this.ctx.drawImage(this.lifeImage, this.lifeImage.width * i + 10 * i, 10);
         }
     }
-    drawAsteroids() {
+    move() {
         this.asteroids.forEach(asteroid => {
             asteroid.move(this.canvas);
+        });
+        this.players.forEach(player => {
+            player.ship.move(this.canvas);
+        });
+    }
+    drawEverything() {
+        this.asteroids.forEach(asteroid => {
             asteroid.draw(this.ctx);
+        });
+        this.players.forEach(player => {
+            player.ship.draw(this.ctx);
+        });
+    }
+    collide() {
+        this.players.forEach(player => {
+            for (let i = 0; i < this.asteroids.length; i++) {
+                const asteroid = this.asteroids[i];
+            }
+        });
+    }
+    drawAsteroids() {
+        this.asteroids.forEach(asteroid1 => {
+            asteroid1.move(this.canvas);
+            asteroid1.draw(this.ctx);
+            const ship = this.players[0].ship;
+            if (ship.isHit(asteroid1.xPos, asteroid1.yPos, asteroid1.radius, ship.xPos, ship.yPos, ship.radius, this.ctx)) {
+                console.log('fuk');
+                ship.state = 'fuck';
+            }
             if (this.DEBUG) {
-                asteroid.debug(this.ctx);
+                asteroid1.debug(this.ctx);
             }
         });
     }

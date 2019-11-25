@@ -5,7 +5,10 @@ class GameObject {
     protected _yVel: number;
     protected _rotation: number;
     protected _rotationVel: number;
-    public img: HTMLImageElement;
+    public state: string;
+    public img: HTMLImageElement; 
+    public radius: number;
+    private wasHit: boolean;
 
     constructor(xPos: number, yPos: number, xVel: number, yVel: number, rotation: number) {
         this._xPos = xPos;
@@ -16,6 +19,10 @@ class GameObject {
 
         this._rotation = Math.PI / 180 * rotation;
         this._rotationVel = 0;
+
+        this.state = 'spawning';
+        this.radius = 0;
+        this.wasHit = false;
     }
 
     get xPos(): number {
@@ -66,15 +73,30 @@ class GameObject {
         this._rotationVel = value;
     }
 
+    public isHit(c1x: number, c1y: number, c1r: number, c2x: number, c2y: number, c2r: number, ctx: CanvasRenderingContext2D): boolean {
+        const distX: number = c1x - c2x;
+        const distY: number = c1y - c2y;
+        const distance = Math.sqrt((distX * distY) + (distY*distY));
+
+        if (distance <= c1r + c2r) {
+            return true;
+        }
+        return false;
+    }
+
     public draw(ctx: CanvasRenderingContext2D) {
         if (this.img.naturalWidth > 0) {
+            if (this.radius === 0) {
+                this.radius = (this.img.naturalWidth + this.img.naturalHeight) / 4;
+            }
+
             ctx.save();
 
-            ctx.translate(this.xPos + 0.5 * this.img.width, this.yPos + 0.5 * this.img.height);
+            ctx.translate(this.xPos, this.yPos);
             ctx.rotate(this.rotation);
-            ctx.translate(-(this.xPos + 0.5 * this.img.width), -(this.yPos + 0.5 * this.img.height));
+            ctx.translate(-this.xPos, -this.yPos);
 
-            ctx.drawImage(this.img, this.xPos, this.yPos);
+            ctx.drawImage(this.img, this.xPos - this.img.width / 2, this.yPos - this.img.height / 2);
 
             ctx.restore();
 
@@ -111,14 +133,32 @@ class GameObject {
     }
 
     public debug(ctx: CanvasRenderingContext2D) {
-        const x = this.xPos + this.img.width;
-        let y = this.yPos + this.img.height;
+        const x = this.xPos + this.img.width / 2;
+        let y = this.yPos + this.img.height / 2;
         const size = 10;
+        const center = (this.img.naturalWidth + this.img.naturalHeight) / 4;
+
+        ctx.save();
+
         this.drawTextToCanvas(`${x.toFixed(0)}, ${y.toFixed(0)}`, x, y, ctx, size);
         y += size + 2;
         this.drawTextToCanvas(`${this.xVel}, ${this.yVel}`, x, y, ctx, size);
         y += size + 2;
-        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size)   
+        this.drawTextToCanvas(`${this.rotation.toFixed(0)}, ${this.rotationVel.toFixed(3)}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.state}`, x, y, ctx, size);
+        y += size + 2;
+        this.drawTextToCanvas(`${this.wasHit}`, x, y, ctx, size);
+        
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.xPos - 2, this.yPos - 2, 4, 4);
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.arc(this.xPos, this.yPos, center, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.restore();
     }
     
     public loadImage(source: string) {
