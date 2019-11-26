@@ -83,7 +83,10 @@ class Bullet extends GameObject {
         ctx.restore();
     }
 
-    public hit(cx: number, cy: number, radius: number): boolean {
+    public hit(gameObject: GameObject): boolean {
+        const cx: number = gameObject.xPos;
+        const cy: number = gameObject.yPos;
+        const radius: number = gameObject.radius;
         const distX: number = this.xPos - cx;
         const distY: number = this.yPos - cy;
         const distance: number = Math.sqrt((distX*distX) + (distY*distY));

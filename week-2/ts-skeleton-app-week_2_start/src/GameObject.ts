@@ -71,7 +71,40 @@ class GameObject {
         this._rotationVel = value;
     }
 
-    public isHit(c1x: number, c1y: number, c1r: number, c2x: number, c2y: number, c2r: number, ctx: CanvasRenderingContext2D): boolean {
+    // public isHit(c1x: number, c1y: number, c1r: number, c2x: number, c2y: number, c2r: number, ctx: CanvasRenderingContext2D): boolean {
+    // public isColliding(object: GameObject): boolean {
+    //     // const distX: number = c1x - c2x;
+    //     const distY: number = c1y - c2y;
+    //     const distance: any = Math.sqrt((distX * distX) + (distY*distY));
+
+    //     if (distance <= c1r + c2r) {
+    //         ctx.save();
+
+    //         ctx.strokeStyle = 'red';
+
+    //         ctx.beginPath();
+    //         ctx.arc(c1x, c1y, c1r, 0, Math.PI * 2);
+    //         ctx.beginPath();
+    //         ctx.arc(c2x, c2y, c2r, 0, Math.PI * 2);
+    //         ctx.stroke();
+
+    //         ctx.restore();
+
+    //         this.state = 'hit';
+    //         return true;
+    //     }
+    //     this.state = 'flying';
+    //     return false;
+    // }
+
+    public isColliding(gameObject: GameObject, ctx: CanvasRenderingContext2D): boolean {
+        const c1x: number = this.xPos;
+        const c1y: number = this.yPos;
+        const c1r: number = this.radius;
+        const c2x: number = gameObject.xPos;
+        const c2y: number = gameObject.yPos;
+        const c2r: number = gameObject.radius;
+        
         const distX: number = c1x - c2x;
         const distY: number = c1y - c2y;
         const distance: any = Math.sqrt((distX * distX) + (distY*distY));
@@ -92,6 +125,7 @@ class GameObject {
             this.state = 'hit';
             return true;
         }
+        
         this.state = 'flying';
         return false;
     }

@@ -25,7 +25,7 @@ class LevelScreen extends GameScreen {
         if (this.players.length > 1) {
             this.players[1].ship.xPos += 300;
         }
-        
+
         this.t = performance.now();
         this.startTime = this.t;
         this.averageFpsList = [];
@@ -34,7 +34,7 @@ class LevelScreen extends GameScreen {
         this.asteroids = [];
         this.staticAsteroid = new Asteroid(500, 500, 0, 0, 0);
         this.asteroids.push(this.staticAsteroid);
- 
+
         // this.createAsteroids(Game.randomNumber(10, 20));
         this.createAsteroids(5);
 
@@ -118,30 +118,55 @@ class LevelScreen extends GameScreen {
         });
     }
 
+    // public collide() {
+    //     // Checks collisions for each player and their fired bullets
+    //     this.players.forEach(player => {
+    //         const x = player.ship.xPos;
+    //         const y = player.ship.yPos;
+    //         const r = player.ship.radius;
+
+    //         // Loops all asteroids
+    //         for (let i = 0; i < this.asteroids.length; i++) {
+    //             const asteroid = this.asteroids[i];
+    //             const aX = asteroid.xPos;
+    //             const aY = asteroid.yPos;
+    //             const aR = asteroid.radius;
+
+    //             // Checks if a bullet hit this asteroid
+    //             for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
+    //                 const bullet = player.ship.bullets[i];
+    //                 if(bullet.hit(aX, aY, aR)) {
+    //                     player.ship.bullets.splice(i, 1);
+    //                     asteroid.state = 'hit';
+    //                 }
+    //             }
+
+    //             if (player.ship.isHit(x, y, r, aX, aY, aR, this.ctx)) {
+    //                 break;
+    //             }
+    //         }
+    //     });
+    // }
+
     public collide() {
         // Checks collisions for each player and their fired bullets
         this.players.forEach(player => {
-            const x = player.ship.xPos;
-            const y = player.ship.yPos;
-            const r = player.ship.radius;
-
             // Loops all asteroids
             for (let i = 0; i < this.asteroids.length; i++) {
                 const asteroid = this.asteroids[i];
-                const aX = asteroid.xPos;
-                const aY = asteroid.yPos;
-                const aR = asteroid.radius;
 
                 // Checks if a bullet hit this asteroid
                 for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
                     const bullet = player.ship.bullets[i];
-                    if(bullet.hit(aX, aY, aR)) {
+                    if (bullet.hit(asteroid)) {
                         player.ship.bullets.splice(i, 1);
                         asteroid.state = 'hit';
                     }
                 }
 
-                if (player.ship.isHit(x, y, r, aX, aY, aR, this.ctx)) {
+                if (player.ship.isColliding(asteroid, this.ctx)) {
+                    player.ship.respawn();
+                    player.lives--;
                     break;
                 }
             }

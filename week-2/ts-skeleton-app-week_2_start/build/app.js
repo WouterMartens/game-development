@@ -45,7 +45,13 @@ class GameObject {
     set rotationVel(value) {
         this._rotationVel = value;
     }
-    isHit(c1x, c1y, c1r, c2x, c2y, c2r, ctx) {
+    isColliding(gameObject, ctx) {
+        const c1x = this.xPos;
+        const c1y = this.yPos;
+        const c1r = this.radius;
+        const c2x = gameObject.xPos;
+        const c2y = gameObject.yPos;
+        const c2r = gameObject.radius;
         const distX = c1x - c2x;
         const distY = c1y - c2y;
         const distance = Math.sqrt((distX * distX) + (distY * distY));
@@ -214,7 +220,10 @@ class Bullet extends GameObject {
         ctx.fillRect(this.xPos - this.width / 2, this.yPos - this.ship.img.height / 2, this.width, this.height);
         ctx.restore();
     }
-    hit(cx, cy, radius) {
+    hit(gameObject) {
+        const cx = gameObject.xPos;
+        const cy = gameObject.yPos;
+        const radius = gameObject.radius;
         const distX = this.xPos - cx;
         const distY = this.yPos - cy;
         const distance = Math.sqrt((distX * distX) + (distY * distY));
@@ -413,22 +422,18 @@ class LevelScreen extends GameScreen {
     }
     collide() {
         this.players.forEach(player => {
-            const x = player.ship.xPos;
-            const y = player.ship.yPos;
-            const r = player.ship.radius;
             for (let i = 0; i < this.asteroids.length; i++) {
                 const asteroid = this.asteroids[i];
-                const aX = asteroid.xPos;
-                const aY = asteroid.yPos;
-                const aR = asteroid.radius;
                 for (let i = player.ship.bullets.length - 1; i >= 0; i--) {
                     const bullet = player.ship.bullets[i];
-                    if (bullet.hit(aX, aY, aR)) {
+                    if (bullet.hit(asteroid)) {
                         player.ship.bullets.splice(i, 1);
                         asteroid.state = 'hit';
                     }
                 }
-                if (player.ship.isHit(x, y, r, aX, aY, aR, this.ctx)) {
+                if (player.ship.isColliding(asteroid, this.ctx)) {
+                    player.ship.respawn();
+                    player.lives--;
                     break;
                 }
             }
@@ -483,15 +488,17 @@ class Ship extends GameObject {
         this.loadImage(this.randomShip());
         this.bullets = [];
         this.keyboardListener = keyboardListener;
-        this.rpm = 600;
+        this.rpm = 400;
         this.lastShot = null;
-        this.thrusting = false;
-        this.thrust = {
-            x: 0,
-            y: 0
-        };
-        this.friction = 0.7;
-        this.fps = 60;
+    }
+    respawn() {
+        if (this.state !== 'spawning') {
+            this.respawnTime = performance.now();
+            this.state = 'spawning';
+            this.xPos = window.innerWidth / 2;
+            this.yPos = window.innerHeight / 2;
+            this.rotation = 0;
+        }
     }
     move(canvas) {
         if (this.keyboardListener.isKeyDown(KeyboardListener.KEY_RIGHT)) {

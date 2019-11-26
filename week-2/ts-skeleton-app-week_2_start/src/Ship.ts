@@ -12,11 +12,7 @@ class Ship extends GameObject {
     private lastShot: DOMHighResTimeStamp;
     private rpm: number;
 
-    private thrusting: boolean;
-    private thrust: Thrust;
-    private friction: number;
-    private rot: number;
-    private fps: number;
+    public respawnTime: DOMHighResTimeStamp;
 
     constructor(
         xPos: number,
@@ -33,16 +29,26 @@ class Ship extends GameObject {
         this.bullets = [];
         this.keyboardListener = keyboardListener;
 
-        this.rpm = 600;
+        this.rpm = 400;
         this.lastShot = null;
 
-        this.thrusting = false;
-        this.thrust = {
-            x: 0,
-            y: 0
+        // this.thrusting = false;
+        // this.thrust = {
+        //     x: 0,
+        //     y: 0
+        // }
+        // this.friction = 0.7;
+        // this.fps = 60;
+    }
+
+    public respawn(): void {
+        if (this.state !== 'spawning') {
+            this.respawnTime = performance.now();
+            this.state = 'spawning';
+            this.xPos = window.innerWidth / 2;
+            this.yPos = window.innerHeight / 2;
+            this.rotation = 0;
         }
-        this.friction = 0.7;
-        this.fps = 60;
     }
 
     public move(canvas: HTMLCanvasElement) {
