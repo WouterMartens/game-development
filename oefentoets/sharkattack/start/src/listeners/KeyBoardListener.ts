@@ -79,7 +79,7 @@ class KeyBoardListener {
   /**
    * Function to get the downPressed property
    */
-  public getdownPressed(): boolean {
+  public getDownPressed(): boolean {
     return this.downPressed;
   }
 }

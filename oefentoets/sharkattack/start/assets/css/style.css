@@ -3,3 +3,7 @@ canvas{
     background-repeat: repeat;
     background-size: contain;
 }
+
+html {
+    overflow: hidden;
+}
