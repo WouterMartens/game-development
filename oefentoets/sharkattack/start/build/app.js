@@ -5,8 +5,14 @@ class GameItem {
         this.imgSource = imgSource;
         this.canvas = canvas;
         this.img = canvas.loadImage(imgSource);
+        this.width = this.img.width;
+        this.height = this.img.height;
     }
     draw() {
+        if (this.width === 0) {
+            this.width = this.img.width;
+            this.height = this.img.height;
+        }
         this.canvas.writeImageFromFileToCanvas(this.imgSource, this.xPos, this.yPos);
     }
     getX() {
@@ -26,19 +32,39 @@ class Boat extends GameItem {
     constructor(x, y, imgSource, canvas) {
         super(x, y, imgSource, canvas);
         this.keyboardListener = new KeyBoardListener();
+        this.isHit = false;
     }
     move() {
         if (this.keyboardListener.getUpPressed()) {
-            this.yPos--;
+            this.yPos -= 5;
         }
         if (this.keyboardListener.getDownPressed()) {
-            this.yPos++;
+            this.yPos += 5;
         }
         if (this.keyboardListener.getRightPressed()) {
-            this.xPos++;
+            this.xPos += 5;
+        }
+        this.xPos -= 0.5;
+        if (this.xPos < 0) {
+            this.xPos = 0;
+        }
+        if (this.xPos > this.canvas.getWidth() - this.img.width) {
+            this.xPos = this.canvas.getWidth() - this.img.width;
+        }
+        if (this.yPos < 0) {
+            this.yPos = 0;
+        }
+        if (this.yPos > this.canvas.getHeight() - this.img.height) {
+            this.yPos = this.canvas.getHeight() - this.img.height;
         }
     }
     isColliding(shark) {
+        if ((this.yPos + this.img.height > shark.getY() + 40) &&
+            (this.yPos < shark.getY() + shark.getHeight() - 50) &&
+            (this.xPos + this.img.width > shark.getX()) &&
+            (this.xPos < shark.getX() + shark.getWidth())) {
+            return true;
+        }
         return false;
     }
 }
@@ -63,9 +89,14 @@ class Canvas {
         this.ctx.textAlign = alignment;
         this.ctx.fillText(text, xCoordinate, yCoordinate);
     }
-    writeImageFromFileToCanvas(src, xCoordinate, yCoordinate) {
+    getContext() {
+        return this.ctx;
+    }
+    writeImageFromFileToCanvas(src, xCoordinate, yCoordinate, scale = 1) {
         let element = document.createElement("img");
         element.src = src;
+        this.ctx.save();
+        this.ctx.scale(scale, scale);
         this.ctx.drawImage(element, xCoordinate, yCoordinate);
     }
     randomNumber(min, max) {
@@ -77,21 +108,53 @@ class Canvas {
     getHeight() {
         return this._canvas.height;
     }
+    writeDropShadowText(text, fontSize, xCoordinate, yCoordinate, color = "white", alignment = "center") {
+        this.writeTextToCanvas(text, fontSize, xCoordinate, yCoordinate + (fontSize / 20), 'black', alignment);
+        this.writeTextToCanvas(text, fontSize, xCoordinate, yCoordinate, color, alignment);
+    }
+    writeGameOver() {
+        const string = 'Game over!';
+        const size = 100;
+        const x = this.getWidth() / 2;
+        const y = this.getHeight() / 2;
+        this.writeDropShadowText(string, size, x, y, 'white');
+    }
+    writeScore(score) {
+        this.writeDropShadowText(`Score: ${score}`, 50, 20, 100, 'white', 'left');
+    }
+    writeLives(lives) {
+        const string = 'Lives: ' + lives;
+        const size = 50;
+        const x = 20;
+        const y = 50;
+        this.writeDropShadowText(string, size, x, y, 'white', 'left');
+    }
 }
 class Game {
     constructor() {
         this.loop = () => {
             this.canvas.clear();
+            this.player.score = this.getScore();
             if (this.sharks.length === 0) {
                 this.createShark();
             }
             this.move();
             this.draw();
-            requestAnimationFrame(this.loop);
+            if (this.player.lives !== 0) {
+                requestAnimationFrame(this.loop);
+            }
+            else {
+                this.canvas.writeGameOver();
+            }
         };
         this.canvas = new Canvas(document.getElementById('canvas'));
-        this.boat = new Boat(100, 100, './assets/images/boat.png', this.canvas);
+        this.boat = new Boat(50, this.canvas.getHeight() / 2 - 70, './assets/images/boat.png', this.canvas);
         this.sharks = [];
+        this.player = {
+            lives: 3,
+            score: 0
+        };
+        this.startTime = performance.now();
         this.loop();
     }
     createShark() {
@@ -112,13 +175,28 @@ class Game {
             else {
                 shark.moveRightToLeft();
             }
+            if (this.boat.isColliding(shark)) {
+                if (!this.boat.isHit) {
+                    this.boat.isHit = true;
+                    this.player.lives--;
+                }
+            }
+            else {
+                this.boat.isHit = false;
+            }
         }
     }
     draw() {
-        this.boat.draw();
+        this.canvas.writeLives(this.player.lives);
+        this.canvas.writeScore(this.player.score);
         this.sharks.forEach(shark => {
             shark.draw();
         });
+        this.boat.draw();
+    }
+    getScore() {
+        const delta = (performance.now() - this.startTime) / 1000;
+        return Number(delta.toFixed(0));
     }
 }
 window.addEventListener('load', init);
@@ -129,6 +207,7 @@ class Shark extends GameItem {
     constructor(x, y, imgSource, canvas, speed) {
         super(x, y, imgSource, canvas);
         this.speed = speed;
+        this.size = Math.random();
     }
     moveRightToLeft() {
         this.xPos -= this.speed;

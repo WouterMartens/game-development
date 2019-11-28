@@ -20,9 +20,15 @@ class GameItem {
         this.imgSource = imgSource;
         this.canvas = canvas;
         this.img = canvas.loadImage(imgSource);
+        this.width = this.img.width;
+        this.height = this.img.height;
     }
 
     public draw() {
+        if (this.width === 0) {
+            this.width = this.img.width;
+            this.height = this.img.height;
+        }
         this.canvas.writeImageFromFileToCanvas(
             this.imgSource,
             this.xPos,

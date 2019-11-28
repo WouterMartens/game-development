@@ -12,7 +12,7 @@ class Canvas {
         this._canvas.height = window.innerHeight;
         this.ctx = this._canvas.getContext('2d');
     }
-
+    
     /**
      * Clears the current canvas
      */
@@ -53,6 +53,10 @@ class Canvas {
         this.ctx.fillText(text, xCoordinate, yCoordinate);
     }
 
+    public getContext() {
+        return this.ctx;
+    }
+
     /**
      * Function to write the image to the canvas
      * @param {string} src 
@@ -63,12 +67,15 @@ class Canvas {
         src: string,
         xCoordinate: number,
         yCoordinate: number,
+        scale: number = 1
     ) {
         let element = document.createElement("img");
         element.src = src;
 
         //element.addEventListener("load", () => {
-            this.ctx.drawImage(element, xCoordinate, yCoordinate);
+        this.ctx.save();
+        this.ctx.scale(scale, scale);
+        this.ctx.drawImage(element, xCoordinate, yCoordinate);
         //});
     }
 
@@ -93,5 +100,74 @@ class Canvas {
      */
     public getHeight(): number {
         return this._canvas.height;
+    }
+
+    /**
+     * 
+     * @param text 
+     * @param fontSize 
+     * @param xCoordinate 
+     * @param yCoordinate 
+     * @param color 
+     * @param alignment 
+     */
+    public writeDropShadowText(
+        text: string,
+        fontSize: number,
+        xCoordinate: number,
+        yCoordinate: number,
+        color: string = "white",
+        alignment: CanvasTextAlign = "center"
+    ) {
+        this.writeTextToCanvas(text, fontSize, xCoordinate, yCoordinate + (fontSize / 20), 'black', alignment);
+        this.writeTextToCanvas(text, fontSize, xCoordinate, yCoordinate, color, alignment);
+    }
+
+    /**
+     * Writes game over text to screen with a dropshadow
+     */
+    public writeGameOver() {
+        const string = 'Game over!';
+        const size = 100;
+        const x = this.getWidth() / 2;
+        const y = this.getHeight() / 2;
+
+        this.writeDropShadowText(
+            string,
+            size,
+            x,
+            y,
+            'white'
+        );
+    }
+
+    public writeScore(score: number) {
+        this.writeDropShadowText(
+            `Score: ${score}`,
+            50,
+            20,
+            100,
+            'white',
+            'left'
+        )
+    }
+
+        /**
+     * Writes game over text to screen with a dropshadow
+     */
+    public writeLives(lives: number) {
+        const string = 'Lives: ' + lives;
+        const size = 50;
+        const x = 20;
+        const y = 50;
+
+        this.writeDropShadowText(
+            string,
+            size,
+            x,
+            y,
+            'white',
+            'left'
+        )
     }
 }
