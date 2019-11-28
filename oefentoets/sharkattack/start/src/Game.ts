@@ -7,6 +7,7 @@ class Game {
     private canvas: Canvas;
     private boat: Boat;
     private sharks: Shark[];
+    private maxSharksOnScreen: number;
     private player: Player;
 
     private startTime: DOMHighResTimeStamp;
@@ -15,6 +16,7 @@ class Game {
         this.canvas = new Canvas(<HTMLCanvasElement>document.getElementById('canvas'));
         this.boat = new Boat(50, this.canvas.getHeight() / 2 - 70, './assets/images/boat.png', this.canvas);
         this.sharks = [];
+        this.maxSharksOnScreen = 5;
 
         this.player = {
             lives: 3,
@@ -55,12 +57,10 @@ class Game {
             }
 
             if (this.boat.isColliding(shark)) {
-                if (!this.boat.isHit) {
-                    this.boat.isHit = true;
+                if (!shark.hitBoat) {
                     this.player.lives--;
                 }
-            } else {
-                this.boat.isHit = false;
+                shark.hitBoat = true;
             }
         }
     }
@@ -91,9 +91,11 @@ class Game {
         
         this.player.score = this.getScore();
 
-        if (this.sharks.length === 0) {
+        if (this.sharks.length < this.maxSharksOnScreen) {
             this.createShark();
         }
+
+        // console.log(this.sharks);
 
         this.move();
         this.draw();

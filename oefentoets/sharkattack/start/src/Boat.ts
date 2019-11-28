@@ -24,19 +24,22 @@ class Boat extends GameItem {
         if (this.keyboardListener.getRightPressed()) {
             this.xPos += 5;
         }
-        this.xPos -= 0.5;
+        this.xPos -= 1;
+
+        const width = this.canvas.getWidth() - this.img.width;
+        const height = this.canvas.getHeight() - this.img.height;
 
         if (this.xPos < 0) {
             this.xPos = 0;
         }
-        if (this.xPos > this.canvas.getWidth() - this.img.width) {
-            this.xPos = this.canvas.getWidth() - this.img.width;
+        if (this.xPos > width) {
+            this.xPos = width;
         }
         if (this.yPos < 0) {
             this.yPos = 0;
         }
-        if (this.yPos > this.canvas.getHeight() - this.img.height) {
-            this.yPos = this.canvas.getHeight() - this.img.height;
+        if (this.yPos > height) {
+            this.yPos = height;
         }
     }
 
@@ -45,13 +48,17 @@ class Boat extends GameItem {
      * @param shark Object to check a collision on
      */
     public isColliding(shark: Shark): boolean {
-        // this.canvas.getContext().save();
-        // this.canvas.getContext().strokeStyle = 'red';
-        // this.canvas.getContext().strokeRect(shark.getX(), shark.getY() + 40, shark.getWidth(), shark.getHeight() - 90);
-        // this.canvas.getContext().restore();
+        const ctx = this.canvas.getContext();
+        ctx.save();
+        ctx.strokeStyle = 'red';
+        console.log(shark.getSize());
+        const translateY1 = 42 * (1 + (1 - shark.getSize()));
+        const translateY2 = 50 * (1 + (1 - shark.getSize()));
+        ctx.strokeRect(shark.getX(), shark.getY() + translateY1, shark.getWidth() * shark.getSize(), shark.getHeight() - translateY2 - translateY1);
+        ctx.restore();
 
-        if ((this.yPos + this.img.height >  shark.getY() + 40) &&
-            (this.yPos <  shark.getY() + shark.getHeight() - 50) &&
+        if ((this.yPos + this.img.height >  shark.getY() + translateY1) &&
+            (this.yPos <  shark.getY() + shark.getHeight() - translateY2) &&
             (this.xPos + this.img.width > shark.getX()) &&
             (this.xPos <  shark.getX() + shark.getWidth())
         ) {

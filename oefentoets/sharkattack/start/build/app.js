@@ -4,12 +4,13 @@ class GameItem {
         this.yPos = y;
         this.imgSource = imgSource;
         this.canvas = canvas;
-        this.img = canvas.loadImage(imgSource);
+        this.img = this.canvas.loadImage(imgSource);
         this.width = this.img.width;
         this.height = this.img.height;
     }
     draw() {
         if (this.width === 0) {
+            this.img = this.canvas.loadImage(this.imgSource);
             this.width = this.img.width;
             this.height = this.img.height;
         }
@@ -44,23 +45,33 @@ class Boat extends GameItem {
         if (this.keyboardListener.getRightPressed()) {
             this.xPos += 5;
         }
-        this.xPos -= 0.5;
+        this.xPos -= 1;
+        const width = this.canvas.getWidth() - this.img.width;
+        const height = this.canvas.getHeight() - this.img.height;
         if (this.xPos < 0) {
             this.xPos = 0;
         }
-        if (this.xPos > this.canvas.getWidth() - this.img.width) {
-            this.xPos = this.canvas.getWidth() - this.img.width;
+        if (this.xPos > width) {
+            this.xPos = width;
         }
         if (this.yPos < 0) {
             this.yPos = 0;
         }
-        if (this.yPos > this.canvas.getHeight() - this.img.height) {
-            this.yPos = this.canvas.getHeight() - this.img.height;
+        if (this.yPos > height) {
+            this.yPos = height;
         }
     }
     isColliding(shark) {
-        if ((this.yPos + this.img.height > shark.getY() + 40) &&
-            (this.yPos < shark.getY() + shark.getHeight() - 50) &&
+        const ctx = this.canvas.getContext();
+        ctx.save();
+        ctx.strokeStyle = 'red';
+        console.log(shark.getSize());
+        const translateY1 = 42 * (1 + (1 - shark.getSize()));
+        const translateY2 = 50 * (1 + (1 - shark.getSize()));
+        ctx.strokeRect(shark.getX(), shark.getY() + translateY1, shark.getWidth() * shark.getSize(), shark.getHeight() - translateY2 - translateY1);
+        ctx.restore();
+        if ((this.yPos + this.img.height > shark.getY() + translateY1) &&
+            (this.yPos < shark.getY() + shark.getHeight() - translateY2) &&
             (this.xPos + this.img.width > shark.getX()) &&
             (this.xPos < shark.getX() + shark.getWidth())) {
             return true;
@@ -96,8 +107,11 @@ class Canvas {
         let element = document.createElement("img");
         element.src = src;
         this.ctx.save();
+        this.ctx.translate(xCoordinate, yCoordinate + element.height / 2);
         this.ctx.scale(scale, scale);
+        this.ctx.translate(-xCoordinate, -(yCoordinate + element.height / 2));
         this.ctx.drawImage(element, xCoordinate, yCoordinate);
+        this.ctx.restore();
     }
     randomNumber(min, max) {
         return Math.round(Math.random() * (max - min) + min);
@@ -135,7 +149,7 @@ class Game {
         this.loop = () => {
             this.canvas.clear();
             this.player.score = this.getScore();
-            if (this.sharks.length === 0) {
+            if (this.sharks.length < this.maxSharksOnScreen) {
                 this.createShark();
             }
             this.move();
@@ -150,6 +164,7 @@ class Game {
         this.canvas = new Canvas(document.getElementById('canvas'));
         this.boat = new Boat(50, this.canvas.getHeight() / 2 - 70, './assets/images/boat.png', this.canvas);
         this.sharks = [];
+        this.maxSharksOnScreen = 5;
         this.player = {
             lives: 3,
             score: 0
@@ -176,13 +191,10 @@ class Game {
                 shark.moveRightToLeft();
             }
             if (this.boat.isColliding(shark)) {
-                if (!this.boat.isHit) {
-                    this.boat.isHit = true;
+                if (!shark.hitBoat) {
                     this.player.lives--;
                 }
-            }
-            else {
-                this.boat.isHit = false;
+                shark.hitBoat = true;
             }
         }
     }
@@ -207,7 +219,17 @@ class Shark extends GameItem {
     constructor(x, y, imgSource, canvas, speed) {
         super(x, y, imgSource, canvas);
         this.speed = speed;
-        this.size = Math.random();
+        this.size = canvas.randomNumber(5, 10) / 10;
+        this.hitBoat = false;
+        this.boundingBox = {
+            x1: 0,
+            y1: 40 * this.size,
+            x2: this.img.width * this.size,
+            y2: 50 * this.size
+        };
+    }
+    draw() {
+        this.canvas.writeImageFromFileToCanvas(this.imgSource, this.xPos, this.yPos, this.size);
     }
     moveRightToLeft() {
         this.xPos -= this.speed;
@@ -217,6 +239,9 @@ class Shark extends GameItem {
             return true;
         }
         return false;
+    }
+    getSize() {
+        return this.size;
     }
 }
 class KeyBoardListener {

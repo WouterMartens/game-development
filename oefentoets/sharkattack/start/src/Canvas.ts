@@ -12,7 +12,7 @@ class Canvas {
         this._canvas.height = window.innerHeight;
         this.ctx = this._canvas.getContext('2d');
     }
-    
+
     /**
      * Clears the current canvas
      */
@@ -74,8 +74,13 @@ class Canvas {
 
         //element.addEventListener("load", () => {
         this.ctx.save();
+
+        this.ctx.translate(xCoordinate, yCoordinate + element.height / 2);
         this.ctx.scale(scale, scale);
+        this.ctx.translate(-xCoordinate, -(yCoordinate + element.height / 2));
+
         this.ctx.drawImage(element, xCoordinate, yCoordinate);
+        this.ctx.restore();
         //});
     }
 
@@ -168,6 +173,6 @@ class Canvas {
             y,
             'white',
             'left'
-        )
+        );
     }
 }
